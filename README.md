@@ -9,7 +9,7 @@ that allows for .json resource files to be accessed and edited in-code with an e
 
 | MC Version | Mod Version     |
 |------------|-----------------|
-| 1.21.4     | ✅ V:0.0.4       |
+| 1.21.4     | ✅ V:0.0.5       |
 | <= 1.21.3  | ❌  Incompatible |
 
 ## Downloading the Project
