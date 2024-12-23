@@ -160,10 +160,10 @@ public class Mixson {
 
     private static Map.Entry<UUID[], Integer> buildReferences(Identifier eventId, boolean silentlyFail, ResourceReference... references) {
         UUID[] referenceIds = new UUID[references.length];
-        int lowest = DEFAULT_PRIORITY;
+        int highest = DEFAULT_PRIORITY;
         for (int i = 0, referencesLength = references.length; i < referencesLength; i++) {
             ResourceReference ref = references[i];
-            if(ref.priority() < lowest) lowest = ref.priority();
+            if(ref.priority() > highest) highest = ref.priority();
             UUID referenceUUID = UUID.randomUUID();
             referenceIds[i] = referenceUUID;
             register(ref.priority(), ref.resourceId(), Identifier.of("mixson", "reference_event_" + eventId.getPath()), (ModificationEvent) (elem) -> {
@@ -172,6 +172,6 @@ public class Mixson {
             }, silentlyFail);
             Mixson.references.put(referenceUUID, new BuiltResourceReference(ref.resourceId(), ref.referenceId()));
         }
-        return Map.entry(referenceIds, lowest);
+        return Map.entry(referenceIds, highest);
     }
 }
