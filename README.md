@@ -35,7 +35,10 @@ dependencies {
 }
 ```
 
-The `TAG` in the above section is where the specific version of Mixson will go. To find a version, go to https://jitpack.io/#ramixin/mixson and choose one of the versions to be pasted in where `TAG` is.
+The `TAG` in the above section is where the specific version of Mixson will go.
+To find a version,
+go to https://jitpack.io/#ramixin/mixson. Click the drop-down next to `commits` to select which Mod Loader you are using
+and then press `get it` and copy the tag from below! 
 
 ## Usage
 
