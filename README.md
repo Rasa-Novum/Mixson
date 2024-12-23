@@ -7,10 +7,10 @@ that allows for .json resource files to be accessed and edited in-code with an e
 
 ## Supported MC Versions
 
-| MC Version | Mod Version     |
-|------------|-----------------|
-| 1.21.4     | ✅ V:0.0.5       |
-| <= 1.21.3  | ❌  Incompatible |
+| MC Version    | Mod Version     |
+|---------------|-----------------|
+| 1.21 - 1.21.4 | ✅ V:0.0.6       |
+| < 1.21        | ❌  Incompatible |
 
 ## Downloading the Project
 

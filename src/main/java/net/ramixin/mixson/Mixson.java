@@ -5,15 +5,14 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import net.minecraft.resource.Resource;
 import net.minecraft.util.Identifier;
-import net.ramixin.mixson.events.AdvancedMixsonEvent;
-import net.ramixin.mixson.events.MixsonEvent;
-import net.ramixin.mixson.events.SimpleMixsonEvent;
+import net.ramixin.mixson.events.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.util.*;
 
+@SuppressWarnings("unused")
 public class Mixson {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("Mixson");
@@ -21,39 +20,118 @@ public class Mixson {
     private static final HashMap<UUID, BuiltResourceReference> references = new HashMap<>();
     public static final int DEFAULT_PRIORITY = 1000;
 
-    public static void registerModificationEvent(Identifier resourceId, Identifier eventId, final SimpleMixsonEvent event) {
+    // REGISTRATION METHODS
+
+    public static void registerModificationEvent(Identifier resourceId, Identifier eventId, final ModificationEvent event) {
         registerModificationEvent(DEFAULT_PRIORITY, resourceId, eventId, event);
     }
 
-    public static void registerModificationEvent(int priority, Identifier resourceId, Identifier eventId, final SimpleMixsonEvent event) {
+    public static void registerModificationEvent(int priority, Identifier resourceId, Identifier eventId, final ModificationEvent event) {
         registerModificationEvent(priority, resourceId, eventId, event, false);
     }
 
-    public static void registerModificationEvent(int priority, Identifier resourceId, Identifier eventId, final SimpleMixsonEvent event, boolean silentlyFail) {
+    public static void registerModificationEvent(int priority, Identifier resourceId, Identifier eventId, final ModificationEvent event, boolean silentlyFail) {
         register(priority, resourceId, eventId, event, silentlyFail);
     }
 
-    public static void registerModificationEvent(int priority, Identifier resourceId, Identifier eventId, final AdvancedMixsonEvent event, boolean silentlyFail, final ResourceReference... references) {
-        UUID[] referenceIds = new UUID[references.length];
-        for (int i = 0, referencesLength = references.length; i < referencesLength; i++) {
-            ResourceReference ref = references[i];
-            UUID referenceUUID = UUID.randomUUID();
-            referenceIds[i] = referenceUUID;
-            register(ref.priority(), ref.resourceId(), Identifier.of("mixson", "reference_event_" + eventId.getPath()), (SimpleMixsonEvent) (elem) -> {
-                Mixson.references.get(referenceUUID).fulfill(elem);
-                return elem;
-            }, silentlyFail);
-            Mixson.references.put(referenceUUID, new BuiltResourceReference(resourceId, ref.referenceId()));
-        }
-        register(priority, resourceId, eventId, event, silentlyFail, referenceIds);
+    public static void registerModificationEvent(int priority, Identifier resourceId, Identifier eventId, final AdvancedModificationEvent event, boolean silentlyFail, final ResourceReference... references) {
+        register(priority, resourceId, eventId, event, silentlyFail, buildReferences(eventId, silentlyFail, references).getKey());
     }
 
-    private static void register(int priority, Identifier resourceId, Identifier eventId, MixsonEvent event, boolean silentlyFail, final UUID... referenceIds) {
+    public static void registerCreationEvent(Identifier associatedResourceId, Identifier resourceId, final CreationEvent event, boolean silentlyFail) {
+        register(DEFAULT_PRIORITY, associatedResourceId, resourceId, event, silentlyFail);
+    }
+
+    public static void registerCreationEvent(Identifier associatedResourceId, Identifier resourceId, final AdvancedCreationEvent event, boolean silentlyFail, final ResourceReference... references) {
+        Map.Entry<UUID[], Integer> pair = buildReferences(resourceId, silentlyFail, references);
+        register(pair.getValue(), associatedResourceId, resourceId, event, silentlyFail, pair.getKey());
+    }
+
+    private static void register(int priority, Identifier resourceId, Identifier eventId, MixsonEventTypes.BaseEvent event, boolean silentlyFail, final UUID... referenceIds) {
         List<AssociatedMixsonEvent> eventSet;
         if(events.get(priority) == null) eventSet = new ArrayList<>();
         else eventSet = events.get(priority);
-        eventSet.add(new AssociatedMixsonEvent(resourceId.withSuffixedPath(".json"), eventId, event, silentlyFail, referenceIds));
+        eventSet.add(new AssociatedMixsonEvent(resourceId.withSuffixedPath(".json"), eventId.withSuffixedPath(".json"), event, silentlyFail, referenceIds));
         events.put(priority, eventSet);
+    }
+
+    // EXTERNAL RUN METHODS
+
+    public static List<Resource> runEvents(List<Resource> original, Identifier id) {
+        JsonElement[] modifiedEntries = new JsonElement[original.size()];
+        for (List<AssociatedMixsonEvent> eventSet : events.values()) for (AssociatedMixsonEvent event : eventSet) {
+            if(!event.resourceId().equals(id)) continue;
+            if (event.event() instanceof CreationEvent) original.add(buildResource(original.getFirst(), runCreationEvent(event)));
+            else for (int i = 0; i < original.size(); i++) {
+                try {
+                    if(modifiedEntries[i] == null) modifiedEntries[i] = JsonParser.parseReader(original.get(i).getReader());
+                    JsonElement elem = modifiedEntries[i].getAsJsonObject();
+                    modifiedEntries[i] = runModificationEvent(event, elem);
+                } catch (Exception e) {
+                    error(e, event);
+                }
+            }
+        }
+        for (int i = 0; i < original.size(); i++) if(modifiedEntries[i] != null) {
+            Resource resource = original.get(i);
+            original.set(i, buildResource(resource, modifiedEntries[i]));
+        }
+        return original;
+    }
+
+    public static Map<Identifier, Resource> runEvents(Map<Identifier, Resource> original) {
+        HashMap<Identifier, JsonElement> modifiedEntries = new HashMap<>();
+        for (List<AssociatedMixsonEvent> eventSet : Mixson.events.sequencedValues()) for (AssociatedMixsonEvent event : eventSet) {
+            if (!original.containsKey(event.resourceId())) continue;
+            if (event.event() instanceof MixsonEventTypes.Creation)
+                original.put(event.eventId(), buildResource(original.get(event.resourceId()), runCreationEvent(event)));
+            else try {
+                JsonElement elem = modifiedEntries.getOrDefault(event.resourceId(), JsonParser.parseReader(original.get(event.resourceId()).getReader()));
+                modifiedEntries.put(event.resourceId(), runModificationEvent(event, elem));
+            } catch (Exception e) {
+                error(e, event);
+            }
+        }
+        for (Map.Entry<Identifier, JsonElement> modifiedEntry : modifiedEntries.entrySet()) {
+            Resource resource = original.get(modifiedEntry.getKey());
+            if(resource == null) throw new IllegalStateException("resource was removed before modifications could be applied");
+            original.put(modifiedEntry.getKey(), buildResource(resource, modifiedEntry.getValue()));
+        }
+        return original;
+    }
+
+    // INTERNAL RUN METHODS
+
+    private static JsonElement runCreationEvent(AssociatedMixsonEvent event) {
+        if(event.referenceIds().length == 0) {
+            if(event.event() instanceof CreationEvent simpleEvent) return simpleEvent.run();
+            else throw new MixsonError("Creation Events with no resource references must be of type ModificationMixsonEvent");
+        } else {
+            if(event.event() instanceof AdvancedCreationEvent advancedEvent) {
+                return advancedEvent.run(buildUsableReferences(event));
+            }
+            else throw new MixsonError("Creation Events with resource references must be of type AdvancedMixsonEvent");
+        }
+    }
+
+    private static JsonElement runModificationEvent(AssociatedMixsonEvent event, JsonElement elem) {
+        if(event.referenceIds().length == 0) {
+            if(event.event() instanceof ModificationEvent simpleEvent) return simpleEvent.run(elem);
+            else throw new MixsonError("Modification Events with no resource references must be of type SimpleMixsonEvent");
+        } else {
+            if(event.event() instanceof AdvancedModificationEvent advancedEvent) {
+                return advancedEvent.run(elem, buildUsableReferences(event));
+            }
+            else throw new MixsonError("Modification Events with resource references must be of type AdvancedMixsonEvent");
+        }
+    }
+
+    // MISC.
+
+    private static void error(Exception e, AssociatedMixsonEvent event) {
+        String errorString = String.format("Failed to modify json file '%s' with event '%s'\n", event.resourceId(), event.eventId());
+        if(event.silentlyFail()) LOGGER.error(errorString, e);
+        else throw new MixsonError(errorString+e);
     }
 
     public static boolean removeEvent(Identifier eventId) {
@@ -65,67 +143,35 @@ public class Mixson {
         return false;
     }
 
-    public static List<Resource> runEvents(List<Resource> original, Identifier id) {
-        JsonElement[] modifiedEntries = new JsonElement[original.size()];
-        for (List<AssociatedMixsonEvent> eventSet : events.values()) for (AssociatedMixsonEvent event : eventSet) {
-            if(!event.resourceId().equals(id)) continue;
-            for (int i = 0; i < original.size(); i++) {
-                try {
-                    if(modifiedEntries[i] == null) modifiedEntries[i] = JsonParser.parseReader(original.get(i).getReader());
-                    JsonElement elem = modifiedEntries[i].getAsJsonObject();
-                    modifiedEntries[i] = runEvent(event, elem);
-                } catch (Exception e) {
-                    error(e, event);
-                }
-            }
-        }
-        for (int i = 0; i < original.size(); i++) if(modifiedEntries[i] != null) {
-            Resource resource = original.get(i);
-            int finalI = i;
-            original.set(i, new Resource(resource.getPack(), () -> new ByteArrayInputStream(modifiedEntries[finalI].toString().getBytes()), resource::getMetadata));
-        }
-        return original;
+    // BUILD METHODS
+
+    private static Resource buildResource(Resource assosiatedResource, JsonElement elem) {
+        return new Resource(assosiatedResource.getPack(), () -> new ByteArrayInputStream(elem.toString().getBytes()), assosiatedResource::getMetadata);
     }
 
-    private static JsonElement runEvent(AssociatedMixsonEvent event, JsonElement elem) {
-        if(event.referenceIds().length == 0) {
-            if(event.event() instanceof SimpleMixsonEvent simpleEvent) return simpleEvent.run(elem);
-            else throw new MixsonError("Events with no resource references must be of type SimpleMixsonEvent");
-        } else {
-            if(event.event() instanceof AdvancedMixsonEvent advancedEvent) {
-                HashMap<Identifier, BuiltResourceReference> gatheredReferences = new HashMap<>();
-                for(int i = 0; i < event.referenceIds().length; i++) {
-                    BuiltResourceReference ref = references.get(event.referenceIds()[i]);
-                    gatheredReferences.put(ref.getReferenceId(), ref);
-                }
-                return advancedEvent.run(elem, gatheredReferences);
-            }
-            else throw new MixsonError("Events with resource references must be of type AdvancedMixsonEvent");
+    private static HashMap<Identifier, BuiltResourceReference> buildUsableReferences(AssociatedMixsonEvent event) {
+        HashMap<Identifier, BuiltResourceReference> gatheredReferences = new HashMap<>();
+        for(int i = 0; i < event.referenceIds().length; i++) {
+            BuiltResourceReference ref = references.get(event.referenceIds()[i]);
+            gatheredReferences.put(ref.getReferenceId(), ref);
         }
+        return gatheredReferences;
     }
 
-    private static void error(Exception e, AssociatedMixsonEvent event) {
-        String errorString = String.format("Failed to modify json file '%s' with event '%s'\n", event.resourceId(), event.eventId());
-        if(event.silentlyFail()) LOGGER.error(errorString, e);
-        else throw new MixsonError(errorString+e);
-    }
-
-    public static Map<Identifier, Resource> runEvents(Map<Identifier, Resource> original) {
-        HashMap<Identifier, JsonElement> modifiedEntries = new HashMap<>();
-        for (List<AssociatedMixsonEvent> eventSet : Mixson.events.sequencedValues()) for (AssociatedMixsonEvent event : eventSet) {
-            if (!original.containsKey(event.resourceId())) continue;
-            try {
-                JsonElement elem = modifiedEntries.getOrDefault(event.resourceId(), JsonParser.parseReader(original.get(event.resourceId()).getReader()));
-                modifiedEntries.put(event.resourceId(), runEvent(event, elem));
-            } catch (Exception e) {
-                error(e, event);
-            }
+    private static Map.Entry<UUID[], Integer> buildReferences(Identifier eventId, boolean silentlyFail, ResourceReference... references) {
+        UUID[] referenceIds = new UUID[references.length];
+        int lowest = DEFAULT_PRIORITY;
+        for (int i = 0, referencesLength = references.length; i < referencesLength; i++) {
+            ResourceReference ref = references[i];
+            if(ref.priority() < lowest) lowest = ref.priority();
+            UUID referenceUUID = UUID.randomUUID();
+            referenceIds[i] = referenceUUID;
+            register(ref.priority(), ref.resourceId(), Identifier.of("mixson", "reference_event_" + eventId.getPath()), (ModificationEvent) (elem) -> {
+                Mixson.references.get(referenceUUID).fulfill(elem);
+                return elem;
+            }, silentlyFail);
+            Mixson.references.put(referenceUUID, new BuiltResourceReference(ref.resourceId(), ref.referenceId()));
         }
-        for (Map.Entry<Identifier, JsonElement> modifiedEntry : modifiedEntries.entrySet()) {
-            Resource resource = original.get(modifiedEntry.getKey());
-            if(resource == null) throw new IllegalStateException("resource was removed before modifications could be applied");
-            original.put(modifiedEntry.getKey(), new Resource(resource.getPack(), () -> new ByteArrayInputStream(modifiedEntry.getValue().toString().getBytes()), resource::getMetadata));
-        }
-        return original;
+        return Map.entry(referenceIds, lowest);
     }
 }

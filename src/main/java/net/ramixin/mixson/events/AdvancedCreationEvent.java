@@ -7,8 +7,8 @@ import net.ramixin.mixson.BuiltResourceReference;
 import java.util.HashMap;
 
 @FunctionalInterface
-public interface AdvancedMixsonEvent extends MixsonEvent {
+public interface AdvancedCreationEvent extends MixsonEventTypes.Creation {
 
-    JsonElement run(JsonElement elem, HashMap<Identifier, BuiltResourceReference> references);
+    JsonElement run(HashMap<Identifier, BuiltResourceReference> references);
 
 }
