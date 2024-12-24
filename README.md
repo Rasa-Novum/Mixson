@@ -9,9 +9,12 @@ that allows for .json resource files to be accessed and edited in-code with an e
 
 | MC Version    | Fabric Version  | NeoForge Version |
 |---------------|-----------------|------------------|
-| 1.21.4        | ✅ V:0.0.6.1     | ✅ V:0.0.6        |
-| 1.21 - 1.21.3 | ✅ V:0.0.6.1     | ❌  Incompatible  |
+| 1.21.4        | ✅ `v0.0.6.1`    | ✅ `v0.0.6`       |
+| 1.21 - 1.21.3 | ✅ `v0.0.6.1`    | ❌  Incompatible  |
 | < 1.21        | ❌  Incompatible | ❌  Incompatible  |
+
+Note that the fourth number in the versioning X.X.X.X, if present, is loader-specific.
+That means no new content was added it the new version was just a hotfix for that branch of the repo.
 
 ## Downloading the Project
 
@@ -36,9 +39,8 @@ dependencies {
 ```
 
 The `TAG` in the above section is where the specific version of Mixson will go.
-To find a version,
-go to https://jitpack.io/#ramixin/mixson. Click the drop-down next to `commits` to select which Mod Loader you are using
-and then press `get it` and copy the tag from below! 
+Either copy the most recent version from the table above or
+go to https://jitpack.io/#ramixin/mixson.
 
 ## Usage
 
