@@ -5,17 +5,6 @@ that allows for .json resource files to be modified, created, or deleted at runt
 
 ---
 
-## Supported MC Versions
-
-| MC Version    | Fabric Version  | NeoForge Version |
-|---------------|-----------------|------------------|
-| 1.21.4        | ✅ `v0.1.0`      | ✅ `v0.1.0`       |
-| 1.21 - 1.21.3 | ✅ `v0.1.0`      | ❌  Incompatible  |
-| < 1.21        | ❌  Incompatible | ❌  Incompatible  |
-
-Note that the fourth number in the versioning X.X.X.X, if present, is loader-specific.
-That means no new content was added, and the new version was just a hotfix for that branch of the repo.
-
 ## Downloading the Project
 
 This project can be installed through jitpack. First, add the following to the *first* `repositories` section in the `build.gradle`:
@@ -39,7 +28,7 @@ dependencies {
 ```
 
 The `TAG` in the above section is where the specific version of Mixson will go.
-Either copy the most recent version from the table above or
+Either go to the wiki page below and copy the best version for your MC version, or
 go to https://jitpack.io/#ramixin/mixson.
 
 ## Usage
