@@ -86,12 +86,12 @@ public class Mixson {
                 case MixsonEventTypes.Creation unused -> {
                     JsonElement val = runCreationEvent(event);
                     if(val == null) continue;
-                    exportJson(gson.toJson(val), event.resourceId(), event.eventId());
+                    exportJson(gson.toJson(val), event);
                     original.add(buildResource(original.getFirst(), val));
                 }
                 case MixsonEventTypes.Deletion unused -> {
                     if (runDeletionEvent(event)) {
-                        exportJson("[ \"resource was deleted\" ]", event.resourceId(), event.eventId());
+                        exportJson("[ \"resource was deleted\" ]", event);
                         return List.of();
                     }
                 }
@@ -108,7 +108,7 @@ public class Mixson {
                             error(e, event);
                         }
                     }
-                    exportJson(gson.toJson(array), event.resourceId(), event.eventId());
+                    exportJson(gson.toJson(array), event);
                 }
                 default -> throw new IllegalStateException("Unexpected value: " + event.event());
             }
@@ -128,12 +128,12 @@ public class Mixson {
                 case MixsonEventTypes.Creation unused -> {
                     JsonElement val = runCreationEvent(event);
                     if(val == null) continue;
-                    exportJson(gson.toJson(val), event.resourceId(), event.eventId());
+                    exportJson(gson.toJson(val), event);
                     original.put(event.eventId(), buildResource(original.get(event.resourceId()), val));
                 }
                 case MixsonEventTypes.Deletion unused -> {
                     if (runDeletionEvent(event)) {
-                        exportJson("[ \"resource was deleted\" ]", event.resourceId(), event.eventId());
+                        exportJson("[ \"resource was deleted\" ]", event);
                         original.remove(event.resourceId());
                     }
                 }
@@ -141,7 +141,7 @@ public class Mixson {
                     try {
                         JsonElement elem = modifiedEntries.getOrDefault(event.resourceId(), JsonParser.parseReader(original.get(event.resourceId()).getReader()));
                         JsonElement modifiedElem = runModificationEvent(event, elem);
-                        exportJson(gson.toJson(modifiedElem), event.resourceId(), event.eventId());
+                        exportJson(gson.toJson(modifiedElem), event);
                         modifiedEntries.put(event.resourceId(), modifiedElem);
                     } catch (Exception e) {
                         error(e, event);
@@ -228,12 +228,13 @@ public class Mixson {
         if(debugMode.ordinal() > 0) LOGGER.info(action, args);
     }
 
-    private static void exportJson(String text, Identifier resourceId, Identifier eventId) {
+    private static void exportJson(String text, AssociatedMixsonEvent event) {
         if(debugMode.ordinal() <= 1) return;
-        Path dir = FabricLoader.getInstance().getGameDir().resolve(".mixson").resolve(identifierToPathString(resourceId));
+        if(event.referenceEvent()) return;
+        Path dir = FabricLoader.getInstance().getGameDir().resolve(".mixson").resolve(identifierToPathString(event.resourceId()));
         try {
             Files.createDirectories(dir);
-            FileWriter writer = new FileWriter(dir.resolve(identifierToPathString(eventId)+".json").toFile());
+            FileWriter writer = new FileWriter(dir.resolve(identifierToPathString(event.eventId())+".json").toFile());
             writer.write(text);
             writer.close();
         } catch (IOException e) {
