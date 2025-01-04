@@ -1,7 +1,7 @@
 package net.ramixin.mixson.events;
 
 import com.google.gson.JsonElement;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.ramixin.mixson.AssociatedMixsonEvent;
 import net.ramixin.mixson.BuiltResourceReference;
 import net.ramixin.mixson.MixsonError;
@@ -18,14 +18,14 @@ public interface MixsonEventTypes {
 
         String getName();
 
-        T runEvent(AssociatedMixsonEvent event, JsonElement elem, HashMap<Identifier, BuiltResourceReference> references);
+        T runEvent(AssociatedMixsonEvent event, JsonElement elem, HashMap<ResourceLocation, BuiltResourceReference> references);
 
     }
 
     interface Creation extends BaseEvent<JsonElement> {
 
         @Override
-        default JsonElement runEvent(AssociatedMixsonEvent event, JsonElement elem, HashMap<Identifier, BuiltResourceReference> references) {
+        default JsonElement runEvent(AssociatedMixsonEvent event, JsonElement elem, HashMap<ResourceLocation, BuiltResourceReference> references) {
             if(event.referenceIds().length == 0) {
                 if(event.event() instanceof CreationEvent simpleEvent) return simpleEvent.run();
                 else throw new MixsonError("Creation Events with no resource references must be of type CreationEvent");
@@ -42,7 +42,7 @@ public interface MixsonEventTypes {
     interface Deletion extends BaseEvent<Boolean> {
 
         @Override
-        default Boolean runEvent(AssociatedMixsonEvent event, JsonElement elem, HashMap<Identifier, BuiltResourceReference> references) {
+        default Boolean runEvent(AssociatedMixsonEvent event, JsonElement elem, HashMap<ResourceLocation, BuiltResourceReference> references) {
             if(event.referenceIds().length == 0) {
                 if(event.event() instanceof DeletionEvent simpleEvent) return simpleEvent.run();
                 else throw new MixsonError("Deletion Events with no resource references must be of type DeletionEvent");
@@ -58,7 +58,7 @@ public interface MixsonEventTypes {
     interface Modification extends BaseEvent<JsonElement> {
 
         @Override
-        default JsonElement runEvent(AssociatedMixsonEvent event, JsonElement elem, HashMap<Identifier, BuiltResourceReference> references) {
+        default JsonElement runEvent(AssociatedMixsonEvent event, JsonElement elem, HashMap<ResourceLocation, BuiltResourceReference> references) {
             if(event.referenceIds().length == 0) {
                 if(event.event() instanceof ModificationEvent simpleEvent) return simpleEvent.run(elem);
                 else throw new MixsonError("Modification Events with no resource references must be of type ModificationEvent");

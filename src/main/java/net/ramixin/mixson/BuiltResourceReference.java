@@ -1,17 +1,17 @@
 package net.ramixin.mixson;
 
 import com.google.gson.JsonElement;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 public class BuiltResourceReference {
 
     private JsonElement resource;
 
-    private final Identifier referenceId;
+    private final ResourceLocation referenceId;
 
-    private final Identifier resourceId;
+    private final ResourceLocation resourceId;
 
-    protected BuiltResourceReference(Identifier resourceId, Identifier referenceId) {
+    protected BuiltResourceReference(ResourceLocation resourceId, ResourceLocation referenceId) {
         this.resourceId = resourceId;
         this.referenceId = referenceId;
     }
@@ -27,7 +27,7 @@ public class BuiltResourceReference {
         this.resource = elem.deepCopy();
     }
 
-    public Identifier getReferenceId() {
+    public ResourceLocation getReferenceId() {
         return referenceId;
     }
 }

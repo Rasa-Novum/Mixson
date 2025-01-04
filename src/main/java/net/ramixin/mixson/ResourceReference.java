@@ -1,6 +1,6 @@
 package net.ramixin.mixson;
 
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
-public record ResourceReference(int priority, Identifier resourceId, Identifier referenceId) {
+public record ResourceReference(int priority, ResourceLocation resourceId, ResourceLocation referenceId) {
 }
