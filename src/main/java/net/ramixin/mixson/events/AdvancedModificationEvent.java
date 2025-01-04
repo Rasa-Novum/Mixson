@@ -12,4 +12,8 @@ public interface AdvancedModificationEvent extends MixsonEventTypes.Modification
 
     @NotNull JsonElement run(JsonElement elem, HashMap<Identifier, BuiltResourceReference> references);
 
+    @Override
+    default String getName() {
+        return "Advanced Modification Event";
+    }
 }
