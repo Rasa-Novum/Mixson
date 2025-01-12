@@ -1,4 +1,4 @@
-package net.ramixin.mixson;
+package net.ramixin.mixson.debug;
 
 public enum DebugMode {
 

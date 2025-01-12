@@ -2,9 +2,13 @@ package net.ramixin.mixson;
 
 
 import com.google.gson.*;
+import net.fabricmc.api.ModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
+import net.ramixin.mixson.debug.CallCountEntry;
+import net.ramixin.mixson.debug.DebugMode;
+import net.ramixin.mixson.debug.MixsonCommand;
 import net.ramixin.mixson.events.*;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -16,13 +20,16 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @SuppressWarnings("unused")
-public final class Mixson {
+public final class Mixson  implements ModInitializer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("Mixson");
     private static DebugMode debugMode = DebugMode.OFF;
     private static final TreeMap<Integer, List<AssociatedMixsonEvent>> events = new TreeMap<>();
+    private static final Set<ResourceLocation> referenceEventIds = new HashSet<>();
+    private static final HashMap<ResourceLocation, CallCountEntry> callCounts = new HashMap<>();
     private static final HashMap<UUID, BuiltResourceReference> references = new HashMap<>();
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     public static final int DEFAULT_PRIORITY = 1000;
@@ -78,7 +85,9 @@ public final class Mixson {
         for (List<AssociatedMixsonEvent> eventSet : events.values()) for (AssociatedMixsonEvent event : eventSet) {
             if(!event.resourceId().equals(id)) continue;
             int ordinal = event.event().ordinal();
-            if(ordinal == -1) for (int i = original.size()-1; i >= 0; i--) processSingleNamespaceEvent(original, event, i, modifiedEntries);
+            boolean runAll = ordinal == -1;
+            incrementCallCounts(event, runAll ? original.size() : 1);
+            if(runAll) for (int i = original.size()-1; i >= 0; i--) processSingleNamespaceEvent(original, event, i, modifiedEntries);
             else {
                 if(ordinal < 0 || ordinal >= original.size()) ordinalError(ordinal, original.size()-1, event);
                 processSingleNamespaceEvent(original, event, ordinal, modifiedEntries);
@@ -97,6 +106,7 @@ public final class Mixson {
             if (!original.containsKey(event.resourceId())) continue;
             int ordinal = event.event().ordinal();
             if(ordinal != -1 && ordinal != 0) ordinalError(ordinal, 0, event);
+            incrementCallCounts(event, 1);
             logEventRun(event);
             switch (event.event()) {
                 case MixsonEventTypes.Creation creEvent -> {
@@ -140,7 +150,9 @@ public final class Mixson {
             if (!original.containsKey(event.resourceId())) continue;
             List<Resource> resources = original.get(event.resourceId());
             int ordinal = event.event().ordinal();
-            if(ordinal == -1) for (int i = resources.size()-1; i >= 0; i--) processSingleListEvent(original, event, resources, i, modifiedEntries);
+            boolean runAll = ordinal == -1;
+            incrementCallCounts(event, runAll ? resources.size() : 1);
+            if(runAll) for (int i = resources.size()-1; i >= 0; i--) processSingleListEvent(original, event, resources, i, modifiedEntries);
             else {
                 if(event.event().ordinal() >= resources.size() || ordinal < 0) ordinalError(ordinal, resources.size()-1, event);
                 processSingleListEvent(original, event, resources, ordinal, modifiedEntries);
@@ -270,6 +282,27 @@ public final class Mixson {
         if(debugMode.ordinal() > 0) LOGGER.info(action, args);
     }
 
+    private static void incrementCallCounts(AssociatedMixsonEvent event,  int fileOperations) {
+        if(event.referenceEvent()) return;
+        CallCountEntry pair = callCounts.getOrDefault(event.eventId(), CallCountEntry.DEFAULT);
+        callCounts.put(event.eventId(), pair.update(fileOperations));
+    }
+
+    public static void assertEventRan(ResourceLocation eventId) {
+        if(callCounts.getOrDefault(eventId, CallCountEntry.DEFAULT).eventCalls() == 0) throw new AssertionError(String.format("event '%s' was not run", eventId));
+    }
+
+    public static void assertEventRan(ResourceLocation eventId, int callCount) {
+        CallCountEntry pair = callCounts.getOrDefault(eventId, CallCountEntry.DEFAULT);
+        if(pair.eventCalls() != callCount) throw new AssertionError(String.format("event '%s' was expected to run %s time(s), but only ran %s time(s)", eventId, callCount, pair.eventCalls()));
+    }
+
+    public static void assertEventRan(ResourceLocation eventId, int callCount, int fileOperations) {
+        CallCountEntry pair = callCounts.getOrDefault(eventId, CallCountEntry.DEFAULT);
+        if(pair.eventCalls() != callCount) throw new AssertionError(String.format("event '%s' was expected to run %s time(s), but only ran %s time(s)", eventId, callCount, pair.eventCalls()));
+        if(pair.fileOperations() != fileOperations) throw new AssertionError(String.format("event '%s' was expected to operation on  %s file(s), but only operated on %s file(s)", eventId, fileOperations, pair.fileOperations()));
+    }
+
     private static void exportJson(String text, AssociatedMixsonEvent event) {
         if(debugMode.ordinal() <= 1) return;
         if(event.referenceEvent()) return;
@@ -322,12 +355,42 @@ public final class Mixson {
             if(ref.priority() > highest) highest = ref.priority();
             UUID referenceUUID = UUID.randomUUID();
             referenceIds[i] = referenceUUID;
-            register(ref.priority(), ref.resourceId(), ResourceLocation.fromNamespaceAndPath("mixson", "reference_event_" + eventId.getPath()), (ModificationEvent) (elem) -> {
+            ResourceLocation referenceEventId = ResourceLocation.fromNamespaceAndPath("mixson", "reference_event_" + eventId.getPath());
+            register(ref.priority(), ref.resourceId(), referenceEventId, (ModificationEvent) (elem) -> {
                 Mixson.references.get(referenceUUID).fulfill(elem);
                 return elem;
             }, silentlyFail, true);
             Mixson.references.put(referenceUUID, new BuiltResourceReference(ref.resourceId(), ref.referenceId()));
+            referenceEventIds.add(referenceEventId);
         }
         return Map.entry(referenceIds, highest);
     }
+
+    // DEV COMMAND
+
+    @Override
+    public void onInitialize() {
+        if(!FabricLoader.getInstance().isDevelopmentEnvironment()) return;
+        if(!FabricLoader.getInstance().isModLoaded("fabric")) return;
+        MixsonCommand.onInitialize();
+    }
+
+    public static void clearCalls() {
+        callCounts.clear();
+    }
+
+    public static List<ResourceLocation> callCountsSet() {
+        return callCounts
+                .entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByValue())
+                .filter(entry -> !referenceEventIds.contains(entry.getKey()))
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+    }
+
+    public static CallCountEntry getCallCount(ResourceLocation eventId) {
+        return callCounts.getOrDefault(eventId, CallCountEntry.DEFAULT);
+    }
+
 }
