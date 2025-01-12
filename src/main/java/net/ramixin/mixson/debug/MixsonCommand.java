@@ -17,7 +17,6 @@ public class MixsonCommand {
     private static final Logger LOGGER = LoggerFactory.getLogger("Mixson Command");
 
     public static void onInitialize() {
-        System.out.println("Mixson command initialized");
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
             dispatcher.register(Commands.literal("mixson").executes(
                     context -> {
