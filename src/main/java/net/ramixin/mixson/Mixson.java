@@ -4,8 +4,11 @@ package net.ramixin.mixson;
 import com.google.gson.*;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.api.ModContainer;
+import net.fabricmc.loader.api.metadata.CustomValue;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
+import net.ramixin.mixson.atp.MixsonAnnotationProcessor;
 import net.ramixin.mixson.debug.CallCountEntry;
 import net.ramixin.mixson.debug.DebugMode;
 import net.ramixin.mixson.debug.MixsonCommand;
@@ -28,7 +31,6 @@ public final class Mixson  implements ModInitializer {
     private static final Logger LOGGER = LoggerFactory.getLogger("Mixson");
     private static DebugMode debugMode = DebugMode.OFF;
     private static final TreeMap<Integer, List<AssociatedMixsonEvent>> events = new TreeMap<>();
-    private static final Set<ResourceLocation> referenceEventIds = new HashSet<>();
     private static final HashMap<ResourceLocation, CallCountEntry> callCounts = new HashMap<>();
     private static final HashMap<UUID, BuiltResourceReference> references = new HashMap<>();
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -70,7 +72,7 @@ public final class Mixson  implements ModInitializer {
     }
 
     private static void register(int priority, ResourceLocation resourceId, ResourceLocation eventId, MixsonEventTypes.BaseEvent<?> event, boolean silentlyFail, boolean referenceEvent, final UUID... referenceIds) {
-        logEventRegistration(event, eventId, resourceId, priority);
+        if(!referenceEvent) logEventRegistration(event, eventId, resourceId, priority);
         List<AssociatedMixsonEvent> eventSet;
         if(events.get(priority) == null) eventSet = new ArrayList<>();
         else eventSet = events.get(priority);
@@ -361,7 +363,6 @@ public final class Mixson  implements ModInitializer {
                 return elem;
             }, silentlyFail, true);
             Mixson.references.put(referenceUUID, new BuiltResourceReference(ref.resourceId(), ref.referenceId()));
-            referenceEventIds.add(referenceEventId);
         }
         return Map.entry(referenceIds, highest);
     }
@@ -370,6 +371,21 @@ public final class Mixson  implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        for(ModContainer mod : FabricLoader.getInstance().getAllMods()) {
+            CustomValue mixson = mod.getMetadata().getCustomValue("mixsonAPT");
+            if(mixson == null) continue;
+            if(!(mixson instanceof CustomValue.CvArray array)) throw new MixsonError(String.format("'mixson' field in mod '%s' is not of type array", mod.getMetadata().getId()));
+            for(CustomValue entry : array) {
+                if(entry.getType() != CustomValue.CvType.STRING) throw new MixsonError(String.format("'mixson' field in mod '%s' contains non-string value '%s'", mod.getMetadata().getId(), entry));
+                String className = entry.getAsString();
+                try {
+                    MixsonAnnotationProcessor.processClass(Class.forName(className), Mixson::logAction);
+                } catch (ClassNotFoundException e) {
+                    throw new MixsonError(String.format("class '%s' in 'mixson' field in mod '%s' does not exist", className, mod.getMetadata().getId()));
+                }
+            }
+        }
+
         if(!FabricLoader.getInstance().isDevelopmentEnvironment()) return;
         if(!FabricLoader.getInstance().isModLoaded("fabric")) return;
         MixsonCommand.onInitialize();
@@ -384,7 +400,6 @@ public final class Mixson  implements ModInitializer {
                 .entrySet()
                 .stream()
                 .sorted(Map.Entry.comparingByValue())
-                .filter(entry -> !referenceEventIds.contains(entry.getKey()))
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
     }
