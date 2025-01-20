@@ -1,7 +1,11 @@
-# Mixson
+<p align="center">
 
-A simple lightweight library for modded Minecraft
-that allows for .json resource files to be modified, created, or deleted at runtime through an event-based system.
+<img src="brand.png" alt="Mixson fabricated brand icon">
+
+### A simple lightweight library for modded Minecraft that allows for .json resource files to be modified, created, or deleted at runtime through an event-based system.
+
+</p>
+
 
 ---
 
@@ -22,18 +26,18 @@ the dependency can be added through inserting this into the `dependencies` secti
 
 dependencies {
     ...
-    modImplementation 'com.github.ramixin:mixson:TAG'
+    modImplementation 'com.github.ramixin:mixson-fabric:TAG'
     ...
 }
 ```
 
 The `TAG` in the above section is where the specific version of Mixson will go.
 Either go to the wiki page below and copy the best version for your MC version, or
-go to https://jitpack.io/#ramixin/mixson.
+go to https://jitpack.io/#ramixin/mixson-fabric.
 
 ## Usage
 
-See the wiki for indepth usage instructions and examples: https://github.com/Ramixin/Mixson/wiki
+See the wiki for indepth usage instructions and examples: https://github.com/Ramixin/Mixson-Fabric/wiki
 ## License
 
 This project is under an MIT

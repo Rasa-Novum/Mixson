@@ -3,7 +3,7 @@
   "id": "mixson",
   "version": "${version}",
   "name": "Mixson",
-  "description": "Allows in-code modification of .json resources",
+  "description": "Allows in-code manipulation of .json resources",
   "authors": [
     "Ramixin"
   ],
@@ -16,7 +16,7 @@
   ],
   "entrypoints": {
     "main": [
-      "net.ramixin.mixson.Mixson"
+      "net.ramixin.mixson.inline.Mixson"
     ]
   },
   "depends": {
