@@ -3,6 +3,13 @@ package net.ramixin.mixson.atp.annotations.events;
 import net.ramixin.mixson.inline.Mixson;
 import net.ramixin.mixson.atp.BuiltAnnotationEvent;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
 public @interface GenerativeMixsonEvent {
 
     String value();
