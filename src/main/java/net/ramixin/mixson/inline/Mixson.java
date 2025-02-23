@@ -382,11 +382,7 @@ public final class Mixson  implements ModInitializer {
     }
 
     private static void logEventRun(BuiltMixsonEvent<?> event) {
-        logEventRun(event.eventName(), ResourceLocation.parse(event.resourceId()));
-    }
-
-    private static void logEventRun(String eventName, ResourceLocation resourceId) {
-        logAction("Running '{}' on resource '{}'", eventName, resourceId);
+        logAction("Running '{}' on resource '{}'", event.eventName(), event.resourceId());
     }
 
     private static void logEventRegistration(String eventName, String resourceId, int priority) {
