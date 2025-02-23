@@ -61,4 +61,11 @@ public class MixsonRuntime {
         }
     }
 
+    protected BuiltResourceReference<?> getReference(UUID uuid, Function<UUID, BuiltResourceReference<?>> globalCallback) {
+        BuiltResourceReference<?> reference;
+        if(runtimeReferences.containsKey(uuid)) reference = runtimeReferences.get(uuid);
+        else reference = globalCallback.apply(uuid);
+        return reference;
+    }
+
 }

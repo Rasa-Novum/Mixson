@@ -324,7 +324,7 @@ public final class Mixson  implements ModInitializer {
     }
 
     private static <N, T> @NotNull EventContext<T> processContext(MixsonRuntime runtime, Set<N> markedForDeletion, EventEntry<T> eventEntry, BuiltMixsonEvent<T> event, ResourceLocation resourceId, N indexer, T file) {
-        EventContext<T> context = MixsonUtil.createContext(ContextCreationType.IDENTIFIED, resourceId, file, eventEntry, markedForDeletion.contains(indexer), references::get);
+        EventContext<T> context = MixsonUtil.createContext(ContextCreationType.IDENTIFIED, resourceId, file, eventEntry, markedForDeletion.contains(indexer), uuid -> runtime.getReference(uuid, references::get));
         logEventRun(event);
         event.event().runEvent(context);
         exportDebugFile(event.codec().serializeOutputFile(context.getFile()), event);
