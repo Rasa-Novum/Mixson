@@ -12,8 +12,22 @@ import java.util.function.Function;
 
 public interface MixsonUtil {
 
-    static String identifierToPathString(ResourceLocation ResourceLocation) {
-        return ResourceLocation.getNamespace() + '~' + ResourceLocation.getPath().replaceFirst("\\.json", "").replaceAll("/", "-");
+    static String identifierToPathString(String resourceId, String extension) {
+        String usable;
+        if(resourceId.endsWith("*")) usable = removeWildcard(resourceId);
+        else usable = resourceId;
+        String[] splits = usable.split(":", 1);
+        String namespace;
+        String path;
+        if(splits.length == 1) {
+            namespace = "minecraft";
+            path = splits[0];
+        }
+        else {
+            namespace = splits[0];
+            path = splits[1];
+        }
+        return namespace + '~' + path.replaceFirst("\\"+extension, "").replaceAll("/", "-");
     }
 
     static String stringToUsablePath(String string) {

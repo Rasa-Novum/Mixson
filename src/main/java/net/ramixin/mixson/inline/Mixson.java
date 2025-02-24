@@ -156,7 +156,10 @@ public final class Mixson  implements ModInitializer {
             incrementCallCounts(event, original.size());
             processStandardEvent(original, runtime, markedForDeletion, eventEntry, resourceId);
         }
-        filledReferences.forEach(uuid -> references.get(uuid).clear());
+        filledReferences.forEach(uuid-> {
+            if(references.containsKey(uuid))
+                references.get(uuid).clear();
+        });
         for(ResourceLocation id : markedForDeletion) original.remove(id);
         return original;
     }
@@ -206,7 +209,10 @@ public final class Mixson  implements ModInitializer {
             incrementCallCounts(event, original.get(resourceId).size());
             prepareListEventProcessing(original, runtime, markedForDeletion, eventEntry, resourceId);
         }
-        filledReferences.forEach(uuid->references.get(uuid).clear());
+        filledReferences.forEach(uuid-> {
+            if(references.containsKey(uuid))
+                references.get(uuid).clear();
+        });
 
         for(Pair<ResourceLocation, Integer> pairId : markedForDeletion) {
             List<Resource> resources = original.get(pairId.getFirst());
@@ -254,7 +260,10 @@ public final class Mixson  implements ModInitializer {
                 processNamespaceEvent(original, runtime, markedForDeletion, eventEntry, resourceId, ordinal);
             }
         }
-        filledReferences.forEach(uuid->references.get(uuid).clear());
+        filledReferences.forEach(uuid-> {
+            if(references.containsKey(uuid))
+                references.get(uuid).clear();
+        });
 
         markedForDeletion.stream().sorted(Comparator.reverseOrder()).forEach(clazzInt -> original.remove((int) clazzInt));
         return original;
@@ -327,7 +336,7 @@ public final class Mixson  implements ModInitializer {
         EventContext<T> context = MixsonUtil.createContext(ContextCreationType.IDENTIFIED, resourceId, file, eventEntry, markedForDeletion.contains(indexer), uuid -> runtime.getReference(uuid, references::get));
         logEventRun(event);
         event.event().runEvent(context);
-        exportDebugFile(event.codec().serializeOutputFile(context.getFile()), event);
+        exportDebugFile(event.codec().serializeOutputFile(context.getFile()), event.eventName(), event.resourceId(), event.codec().extensionAndDot());
         if(context.isMarkedForDeletion()) markedForDeletion.add(indexer);
         else markedForDeletion.remove(indexer);
         context.getCancelledFutures().forEach(runtime::cancelEvent);
@@ -398,12 +407,12 @@ public final class Mixson  implements ModInitializer {
         callCounts.put(event.uuid(), pair.update(fileOperations));
     }
 
-    private static void exportDebugFile(String text, BuiltMixsonEvent<?> event) {
+    private static void exportDebugFile(String text, String eventName, String resourceId, String extension) {
         if(debugMode.ordinal() <= 1) return;
-        Path dir = FabricLoader.getInstance().getGameDir().resolve(".mixson").resolve(identifierToPathString(ResourceLocation.parse(event.resourceId())));
+        Path dir = FabricLoader.getInstance().getGameDir().resolve(".mixson").resolve(identifierToPathString(resourceId, extension));
         try {
             Files.createDirectories(dir);
-            FileWriter writer = new FileWriter(dir.resolve(stringToUsablePath(event.eventName())+".json").toFile());
+            FileWriter writer = new FileWriter(dir.resolve(stringToUsablePath(eventName)+".json").toFile());
             writer.write(text);
             writer.close();
         } catch (IOException e) {
