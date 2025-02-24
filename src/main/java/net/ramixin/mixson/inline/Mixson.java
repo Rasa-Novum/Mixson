@@ -131,7 +131,7 @@ public final class Mixson  implements ModInitializer {
             if(entry instanceof ReferenceEntry<?> referenceEntry) {
                 int ordinal = entry.getOrdinal();
                 BuiltResourceReference<?> ref = referenceEntry.reference();
-                ResourceLocation resourceId = ref.getResourceId();
+                ResourceLocation resourceId = ref.getResourceId().withSuffix(ref.getCodec().extensionAndDot());
                 if(!original.containsKey(resourceId)) continue;
                 if(ordinal >= 1) ordinalError(ordinal, 0, ref);
                 fulfillReference(original.get(resourceId), ref, filledReferences);
@@ -183,8 +183,9 @@ public final class Mixson  implements ModInitializer {
             if(entry instanceof ReferenceEntry<?> referenceEntry) {
                 int ordinal = entry.getOrdinal();
                 BuiltResourceReference<?> ref = referenceEntry.reference();
-                if(!original.containsKey(ref.getResourceId())) continue;
-                List<Resource> resources = original.get(ref.getResourceId());
+                ResourceLocation resourceId = ref.getResourceId().withSuffix(ref.getCodec().extensionAndDot());
+                if(!original.containsKey(resourceId)) continue;
+                List<Resource> resources = original.get(resourceId);
                 if(ordinal >= resources.size()) ordinalError(ordinal, resources.size()-1, ref);
                 Resource resource = resources.get(ordinal);
                 fulfillReference(resource, ref, filledReferences);
@@ -234,7 +235,7 @@ public final class Mixson  implements ModInitializer {
             if(entry instanceof ReferenceEntry<?> referenceEntry) {
                 int ordinal = entry.getOrdinal();
                 BuiltResourceReference<?> ref = referenceEntry.reference();
-                if(ref.getResourceId() != id) continue;
+                if(!ref.getResourceId().withSuffix(ref.getCodec().extensionAndDot()).equals(id)) continue;
                 if(ordinal >= original.size()) ordinalError(ordinal, original.size()-1, ref);
                 Resource resource = original.get(ordinal);
                 fulfillReference(resource, ref, filledReferences);
