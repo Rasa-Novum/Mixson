@@ -82,13 +82,11 @@ public final class Mixson  implements ModInitializer {
         boolean fail = event.ordinal() < 0 && event.ordinal() != -1;
         logEventRegistration(eventName, resourceId, priority);
         UUID[] referenceIds = new UUID[references.length];
-        int highest = DEFAULT_PRIORITY;
         for (int i = 0, referencesLength = references.length; i < referencesLength; i++) {
             ResourceReference ref = references[i];
-            if(ref.priority() > highest) highest = ref.priority();
             BuiltResourceReference<T> builtReference = new BuiltResourceReference<>(ref, codec);
             referenceIds[i] = builtReference.getUuid();
-            referenceCallback.accept(i, builtReference);
+            referenceCallback.accept(ref.priority(), builtReference);
         }
 
         BuiltMixsonEvent<T> builtEvent = new BuiltMixsonEvent<>(codec, resourceId, eventName, event, silentlyFail, referenceIds);
