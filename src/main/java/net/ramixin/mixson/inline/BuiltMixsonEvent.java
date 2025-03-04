@@ -7,15 +7,15 @@ import net.ramixin.mixson.util.MixsonUtil;
 import java.util.UUID;
 import java.util.function.Function;
 
-public record BuiltMixsonEvent<T>(MixsonCodec<T> codec, UUID uuid, Function<String, Boolean> resourceLocator, String eventName, MixsonEvent<T> event, boolean silentlyFail, UUID... referenceIds) implements ErrorMessageProvider {
+public record BuiltMixsonEvent<T>(MixsonCodec<T> codec, UUID uuid, Function<ResourceLocation, Boolean> resourceLocator, String eventName, MixsonEvent<T> event, boolean silentlyFail, UUID... referenceIds) implements ErrorMessageProvider {
 
-    public BuiltMixsonEvent(MixsonCodec<T> codec, Function<String, Boolean> resourceLocator, String eventId, MixsonEvent<T> event, boolean silentlyFail, UUID... referenceIds) {
+    public BuiltMixsonEvent(MixsonCodec<T> codec, Function<ResourceLocation, Boolean> resourceLocator, String eventId, MixsonEvent<T> event, boolean silentlyFail, UUID... referenceIds) {
         this(codec, UUID.randomUUID(), resourceLocator, eventId, event, silentlyFail, referenceIds);
     }
 
-    public boolean isNotApplicable(ResourceLocation resourceId) {
-        if(!resourceId.getPath().endsWith(codec().extensionAndDot())) return true;
-        return !resourceLocator.apply(MixsonUtil.removeExtension(resourceId));
+    public boolean isApplicable(ResourceLocation resourceId) {
+        if(!resourceId.getPath().endsWith(codec().extensionAndDot())) return false;
+        return resourceLocator.apply(MixsonUtil.removeExtension(resourceId));
     }
 
     @Override

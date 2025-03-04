@@ -1,16 +1,28 @@
 package net.ramixin.mixson.util;
 
+import com.google.gson.JsonElement;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.ramixin.mixson.inline.*;
 import net.ramixin.mixson.inline.entries.EventEntry;
 import org.apache.logging.log4j.util.TriConsumer;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.Function;
 
 public interface MixsonUtil {
+
+    static ByteArrayOutputStream exportJson(JsonElement json) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try {
+            baos.write(json.toString().getBytes());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return baos;
+    }
 
     static String identifierToPathString(String resourceId, String extension) {
         ResourceLocation usable = ResourceLocation.parse(resourceId);
@@ -21,18 +33,18 @@ public interface MixsonUtil {
         return string.replaceAll("[*|/\\\\:?<>\"]", "");
     }
 
-    static String removeExtension(ResourceLocation id) {
+    static ResourceLocation removeExtension(ResourceLocation id) {
         String stringId = id.getPath();
-        for(int i = stringId.length()-1; i > 0; i--) if(stringId.charAt(i) == '.') return stringId.substring(0, i);
-       return stringId;
+        for(int i = stringId.length()-1; i > 0; i--) if(stringId.charAt(i) == '.') return ResourceLocation.fromNamespaceAndPath(id.getNamespace(), stringId.substring(0, i));
+       return id;
     }
 
-    static Function<String, Boolean> getLocatorFromString(String resourceId) {
+    static Function<ResourceLocation, Boolean> getLocatorFromString(String resourceId) {
         if(resourceId.endsWith("*")) {
             String id = removeWildcard(resourceId);
-            return (string) -> string.startsWith(id);
+            return resourceLoc -> resourceLoc.toString().startsWith(id);
         }
-        else return string -> string.equals(resourceId);
+        else return resourceLoc -> resourceLoc.equals(ResourceLocation.parse(resourceId));
     }
 
     static <T> void addComponent(T component, int priority, UUID uuid, Map<UUID, T> components, SortedMap<Integer, List<T>> orderedComponents) {

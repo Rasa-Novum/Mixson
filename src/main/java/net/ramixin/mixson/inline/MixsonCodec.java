@@ -2,6 +2,7 @@ package net.ramixin.mixson.inline;
 
 import net.minecraft.server.packs.resources.Resource;
 import net.ramixin.mixson.util.ResourceDeserializer;
+import net.ramixin.mixson.util.ResourceExporter;
 import net.ramixin.mixson.util.ResourceSerializer;
 
 import java.io.ByteArrayOutputStream;
@@ -14,7 +15,7 @@ public interface MixsonCodec<T> {
 
     Resource serialize(Resource associatedResource, T file);
 
-    ByteArrayOutputStream serializeOutputFile(T file);
+    ByteArrayOutputStream serializeOutputFile(T file) throws IOException;
 
     String extensionAndDot();
 
@@ -31,7 +32,7 @@ public interface MixsonCodec<T> {
         });
     }
 
-    static <T> MixsonCodec<T> create(String extension, ResourceDeserializer<T> deserializer, ResourceSerializer<T> serializer, Function<T, ByteArrayOutputStream> outputFileSerializer) {
+    static <T> MixsonCodec<T> create(String extension, ResourceDeserializer<T> deserializer, ResourceSerializer<T> serializer, ResourceExporter<T> outputFileSerializer) {
         return new MixsonCodec<>() {
             @Override
             public T deserialize(Resource resource) throws IOException {
@@ -44,8 +45,8 @@ public interface MixsonCodec<T> {
             }
 
             @Override
-            public ByteArrayOutputStream serializeOutputFile(T file) {
-                return outputFileSerializer.apply(file);
+            public ByteArrayOutputStream serializeOutputFile(T file) throws IOException {
+                return outputFileSerializer.export(file);
             }
 
             @Override
