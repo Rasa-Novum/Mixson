@@ -22,7 +22,7 @@ public interface MixsonUtil {
     }
 
     static String removeExtension(ResourceLocation id) {
-        String stringId = id.toString();
+        String stringId = id.getPath();
         for(int i = stringId.length()-1; i > 0; i--) if(stringId.charAt(i) == '.') return stringId.substring(0, i);
        return stringId;
     }
