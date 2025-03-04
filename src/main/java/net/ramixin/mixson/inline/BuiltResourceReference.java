@@ -59,8 +59,13 @@ public class BuiltResourceReference<T> implements ErrorMessageProvider {
     }
 
     @Override
-    public String getMessage() {
-        return String.format("Failed to capture json file '%s' for reference '%s'\n", resourceId, referenceId);
+    public String getRuntimeMessage(ResourceLocation resourceId) {
+        return String.format("Failed to capture %s file '%s' for reference '%s'\n", codec.extensionAndDot(), resourceId, referenceId);
+    }
+
+    @Override
+    public String getRegistrationMessage() {
+        return String.format("Failed to register reference '%s' for file '%s'\n", referenceId, resourceId);
     }
 
     @Override

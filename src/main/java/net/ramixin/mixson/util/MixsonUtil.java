@@ -4,34 +4,35 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.ramixin.mixson.inline.*;
 import net.ramixin.mixson.inline.entries.EventEntry;
+import org.apache.logging.log4j.util.TriConsumer;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 public interface MixsonUtil {
 
     static String identifierToPathString(String resourceId, String extension) {
-        String usable;
-        if(resourceId.endsWith("*")) usable = removeWildcard(resourceId);
-        else usable = resourceId;
-        String[] splits = usable.split(":", 1);
-        String namespace;
-        String path;
-        if(splits.length == 1) {
-            namespace = "minecraft";
-            path = splits[0];
-        }
-        else {
-            namespace = splits[0];
-            path = splits[1];
-        }
-        return namespace + '~' + path.replaceFirst("\\"+extension, "").replaceAll("/", "-");
+        ResourceLocation usable = ResourceLocation.parse(resourceId);
+        return usable.getNamespace() + '~' + usable.getPath().replaceFirst("\\"+extension, "").replaceAll("/", "-");
     }
 
     static String stringToUsablePath(String string) {
         return string.replaceAll("[*|/\\\\:?<>\"]", "");
+    }
+
+    static String removeExtension(ResourceLocation id) {
+        String stringId = id.toString();
+        for(int i = stringId.length()-1; i > 0; i--) if(stringId.charAt(i) == '.') return stringId.substring(0, i);
+       return stringId;
+    }
+
+    static Function<String, Boolean> getLocatorFromString(String resourceId) {
+        if(resourceId.endsWith("*")) {
+            String id = removeWildcard(resourceId);
+            return (string) -> string.startsWith(id);
+        }
+        else return string -> string.equals(resourceId);
     }
 
     static <T> void addComponent(T component, int priority, UUID uuid, Map<UUID, T> components, SortedMap<Integer, List<T>> orderedComponents) {
@@ -58,11 +59,11 @@ public interface MixsonUtil {
         return new EventContext<>(creationType, file, resourceId, entry, markedForDeletion, gatheredReferences);
     }
 
-    static <T> Optional<T> getFile(MixsonCodec<T> codec, Resource resource, ErrorMessageProvider messageProvider, BiConsumer<Exception, ErrorMessageProvider> errorCallback) {
+    static <T> Optional<T> getFile(MixsonCodec<T> codec, Resource resource, ErrorMessageProvider messageProvider, ResourceLocation resourceId, TriConsumer<Exception, ErrorMessageProvider, ResourceLocation> errorCallback) {
         try {
             return Optional.of(codec.deserialize(resource));
         } catch (IOException e) {
-            errorCallback.accept(e, messageProvider);
+            errorCallback.accept(e, messageProvider, resourceId);
         }
         return Optional.empty();
     }
