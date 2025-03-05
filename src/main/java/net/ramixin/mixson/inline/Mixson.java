@@ -214,10 +214,13 @@ public final class Mixson implements ModInitializer {
             if(!event.isApplicable(id)) continue;
             int ordinal = eventEntry.getOrdinal();
             if(ordinal >= original.size()) ordinalError(ordinal, original.size()-1, event, id);
-            if(ordinal == -1) for(int i = 0; i < original.size(); i++) {
-                processNamespaceEvent(original, runtime, markedForDeletion, eventEntry, id, i);
-                fileOperations++;
-            } else {
+            if(ordinal == -1) {
+                int toIter = original.size();
+                for (int i = 0; i < toIter; i++) {
+                    processNamespaceEvent(original, runtime, markedForDeletion, eventEntry, id, i);
+                    fileOperations++;
+                }
+            }else {
                 processNamespaceEvent(original, runtime, markedForDeletion, eventEntry, id, ordinal);
                 fileOperations++;
             }
