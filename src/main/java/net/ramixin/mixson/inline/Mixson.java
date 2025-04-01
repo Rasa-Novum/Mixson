@@ -23,6 +23,7 @@ import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.util.function.BiConsumer;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileOutputStream;
