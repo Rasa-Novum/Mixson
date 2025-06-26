@@ -2,16 +2,12 @@ package net.ramixin.mixson.inline;
 
 
 import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
 import com.mojang.datafixers.util.Pair;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
-import net.fabricmc.loader.api.ModContainer;
-import net.fabricmc.loader.api.metadata.CustomValue;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.ramixin.mixson.MixsonError;
-import net.ramixin.mixson.atp.MixsonAnnotationProcessor;
 import net.ramixin.mixson.debug.CallCountEntry;
 import net.ramixin.mixson.debug.DebugMode;
 import net.ramixin.mixson.debug.MixsonCommand;
@@ -23,16 +19,14 @@ import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.util.function.BiConsumer;
 
-import java.io.ByteArrayInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import static net.ramixin.mixson.util.MixsonUtil.*;
@@ -48,33 +42,64 @@ public final class Mixson implements ModInitializer {
     private static final Map<UUID, BuiltResourceReference<?>> references = Collections.synchronizedMap(new ConcurrentHashMap<>());
     private static final SortedMap<Integer, List<BuiltResourceReference<?>>> orderedReferences = Collections.synchronizedSortedMap(new TreeMap<>());
     public static final int DEFAULT_PRIORITY = 1000;
-    public static final MixsonCodec<JsonElement> JSON_ELEMENT_CODEC = MixsonCodec.create(
-            "json",
-            r -> JsonParser.parseReader(r.openAsReader()),
-            (r, x) -> new Resource(r.source(), () -> new ByteArrayInputStream(x.toString().getBytes()), r::metadata),
-            MixsonUtil::exportJson
-    );
 
-    // REGISTRATION METHODS
+    /**
+     * Use {@link MixsonCodecs#JSON_ELEMENT}
+     * instead
+     * **/
+    @Deprecated(forRemoval = true)
+    public static final MixsonCodec<JsonElement> JSON_ELEMENT_CODEC = MixsonCodecs.JSON_ELEMENT;
 
+    // EVENT REGISTRATION METHODS
+
+    /**
+     * Use {@link #registerEvent(int, ResourceLocator, String, MixsonEvent, boolean, ResourceReference...)}
+     * instead
+     * **/
+    @Deprecated(forRemoval = true)
     public static UUID registerEvent(int priority, String resourceId, String eventName, MixsonEvent<JsonElement> event, ResourceReference... references) {
         return registerEvent(priority, resourceId, eventName, event, false, references);
     }
 
+    /**
+     * Use {@link #registerEvent(int, ResourceLocator, String, MixsonEvent, boolean, ResourceReference...)}
+     * instead
+     * **/
+    @Deprecated(forRemoval = true)
     public static UUID registerEvent(int priority, String resourceId, String eventName, MixsonEvent<JsonElement> event, boolean silentlyFail, ResourceReference... references) {
-        return registerEvent(JSON_ELEMENT_CODEC, priority, resourceId, eventName, event, silentlyFail, references);
+        return registerEvent(MixsonCodecs.JSON_ELEMENT, priority, resourceId, eventName, event, silentlyFail, references);
     }
 
-    public static UUID registerEvent(int priority, Function<ResourceLocation, Boolean> resourceLocator, String eventName, MixsonEvent<JsonElement> event, boolean silentlyFail, ResourceReference... references) {
-        return registerEvent(JSON_ELEMENT_CODEC, priority, resourceLocator, eventName, event, silentlyFail, references);
+    public static UUID registerEvent(int priority, ResourceLocator resourceLocator, String eventName, MixsonEvent<JsonElement> event, boolean silentlyFail, ResourceReference... references) {
+        return registerEvent(MixsonCodecs.JSON_ELEMENT, priority, resourceLocator, eventName, event, silentlyFail, references);
     }
 
+    /**
+     * Use {@link #registerEvent(MixsonCodec, int, ResourceLocator, String, MixsonEvent, boolean, ResourceReference...)}
+     * instead
+     * **/
+    @Deprecated(forRemoval = true)
     public static <T> UUID registerEvent(MixsonCodec<T> codec, int priority, String resourceId, String eventName, MixsonEvent<T> event, boolean silentlyFail, ResourceReference... references) {
         return registerEvent(codec, priority, getLocatorFromString(resourceId), eventName, event, silentlyFail, references);
     }
 
-    public static <T> UUID registerEvent(MixsonCodec<T> codec, int priority, Function<ResourceLocation, Boolean> resourceLocator, String eventName, MixsonEvent<T> event, boolean silentlyFail, ResourceReference... references) {
-        return finalizeEventRegistration(priority, buildMixsonEvent(codec, priority, resourceLocator, eventName, event, silentlyFail, references, Mixson::finalizeReferenceRegistration));
+    public static <T> UUID registerEvent(MixsonCodec<T> codec, int priority, ResourceLocator resourceLocator, String eventName, MixsonEvent<T> event, boolean silentlyFail, ResourceReference... references) {
+        BuiltMixsonEvent<T> builtEvent = new MixsonEventBuilder<T>()
+                .setCodec(codec)
+                .setResourceLocator(resourceLocator)
+                .setEventName(eventName)
+                .setEvent(event)
+                .setSilentlyFail(silentlyFail)
+                .setReferences(references)
+                .build(priority, Mixson::finalizeReferenceRegistration);
+        return finalizeEventRegistration(priority, builtEvent);
+    }
+
+    public static <T> UUID registerEvent(int priority, MixsonEventBuilder<T> builder) {
+        BuiltMixsonEvent<T> builtEvent = builder.build(priority, Mixson::finalizeReferenceRegistration);
+        if(builtEvent.assertive())
+            throw new IllegalStateException("non-runtime events cannot be assertive");
+        return finalizeEventRegistration(priority, builtEvent);
     }
 
 
@@ -89,40 +114,11 @@ public final class Mixson implements ModInitializer {
         addComponent(builtReference, priority, builtReference.getUuid(), references, orderedReferences);
     }
 
-    private static <T> @NotNull BuiltMixsonEvent<T> buildMixsonEvent(MixsonCodec<T> codec, int priority, Function<ResourceLocation, Boolean> resourceLocator, String eventName, MixsonEvent<T> event, boolean silentlyFail, ResourceReference[] references, BiConsumer<Integer, BuiltResourceReference<T>> referenceCallback) {
-        boolean fail = event.ordinal() < 0 && event.ordinal() != -1;
-        logEventRegistration(eventName, priority);
-        UUID[] referenceIds = new UUID[references.length];
-        for (int i = 0, referencesLength = references.length; i < referencesLength; i++) {
-            ResourceReference ref = references[i];
-            BuiltResourceReference<T> builtReference = new BuiltResourceReference<>(ref, codec);
-            referenceIds[i] = builtReference.getUuid();
-            referenceCallback.accept(ref.priority(), builtReference);
-        }
-
-        BuiltMixsonEvent<T> builtEvent = new BuiltMixsonEvent<>(codec, resourceLocator, eventName, event, silentlyFail, referenceIds);
-        if(fail) registrationError(new MixsonError("event ordinal value cannot be negative"), builtEvent);
-        return builtEvent;
-    }
-
     // INIT
 
     @Override
     public void onInitialize() {
-        for(ModContainer mod : FabricLoader.getInstance().getAllMods()) {
-            CustomValue mixson = mod.getMetadata().getCustomValue("mixson");
-            if(mixson == null) continue;
-            if(!(mixson instanceof CustomValue.CvArray array)) throw new MixsonError("'mixson' field in mod '%s' is not of type array", mod.getMetadata().getId());
-            for(CustomValue entry : array) {
-                if(entry.getType() != CustomValue.CvType.STRING) throw new MixsonError("'mixson' field in mod '%s' contains non-string value '%s'", mod.getMetadata().getId(), entry);
-                String className = entry.getAsString();
-                try {
-                    MixsonAnnotationProcessor.processClass(Class.forName(className));
-                } catch (ClassNotFoundException e) {
-                    throw new MixsonError("class '%s' in 'mixson' field in mod '%s' does not exist", className, mod.getMetadata().getId());
-                }
-            }
-        }
+        loadATPMixsonEntries("mixson");
 
         if(!FabricLoader.getInstance().isDevelopmentEnvironment()) return;
         if(!FabricLoader.getInstance().isModLoaded("fabric")) return;
@@ -137,16 +133,21 @@ public final class Mixson implements ModInitializer {
         final Set<UUID> filledReferences = new HashSet<>();
         while(runtime.hasFinished()) {
             AbstractEntry entry = runtime.pop();
-            if(entry instanceof ReferenceEntry<?> referenceEntry) {
-                int ordinal = entry.getOrdinal();
-                BuiltResourceReference<?> ref = referenceEntry.reference();
-                ResourceLocation resourceId = ref.getResourceId().withSuffix(ref.getCodec().extensionAndDot());
-                if(!original.containsKey(resourceId)) continue;
-                if(ordinal >= 1) ordinalError(ordinal, 0, ref, resourceId);
-                fulfillReference(original.get(resourceId), ref, filledReferences);
-                continue;
+            switch (entry) {
+                case ReferenceEntry<?> referenceEntry -> {
+                    int ordinal = entry.getOrdinal();
+                    BuiltResourceReference<?> ref = referenceEntry.reference();
+                    ResourceLocation resourceId = ref.getResourceId().withSuffix(ref.getCodec().extensionAndDot());
+                    if(!original.containsKey(resourceId)) continue;
+                    if(ordinal >= 1) ordinalError(ordinal, 0, ref, resourceId);
+                    fulfillReference(original.get(resourceId), ref, filledReferences);
+                }
+
+                case EventEntry<?> eventEntry -> beginEventProcessing(Mixson::processStandardEvent, original, eventEntry, runtime, markedForDeletion);
+
+                default -> throw new IllegalStateException("Unexpected value: " + entry);
             }
-            beginEventProcessing(Mixson::processStandardEvent, original, (EventEntry<?>) entry, runtime, markedForDeletion);
+
         }
         filledReferences.forEach(uuid-> {
             if(references.containsKey(uuid))
@@ -162,18 +163,22 @@ public final class Mixson implements ModInitializer {
         final Set<UUID> filledReferences = new HashSet<>();
         while(runtime.hasFinished()) {
             AbstractEntry entry = runtime.pop();
-            if(entry instanceof ReferenceEntry<?> referenceEntry) {
-                int ordinal = entry.getOrdinal();
-                BuiltResourceReference<?> ref = referenceEntry.reference();
-                ResourceLocation resourceId = ref.getResourceId().withSuffix(ref.getCodec().extensionAndDot());
-                if(!original.containsKey(resourceId)) continue;
-                List<Resource> resources = original.get(resourceId);
-                if(ordinal >= resources.size()) ordinalError(ordinal, resources.size()-1, ref, resourceId);
-                Resource resource = resources.get(ordinal);
-                fulfillReference(resource, ref, filledReferences);
-                continue;
+            switch (entry) {
+                case ReferenceEntry<?> referenceEntry -> {
+                    int ordinal = entry.getOrdinal();
+                    BuiltResourceReference<?> ref = referenceEntry.reference();
+                    ResourceLocation resourceId = ref.getResourceId().withSuffix(ref.getCodec().extensionAndDot());
+                    if(!original.containsKey(resourceId)) continue;
+                    List<Resource> resources = original.get(resourceId);
+                    if(ordinal >= resources.size()) ordinalError(ordinal, resources.size()-1, ref, resourceId);
+                    Resource resource = resources.get(ordinal);
+                    fulfillReference(resource, ref, filledReferences);
+                }
+
+                case EventEntry<?> eventEntry -> beginEventProcessing(Mixson::prepareListEventProcessing, original, eventEntry, runtime, markedForDeletion);
+
+                default -> throw new IllegalStateException("Unexpected value: " + entry);
             }
-            beginEventProcessing(Mixson::prepareListEventProcessing, original, (EventEntry<?>) entry, runtime, markedForDeletion);
         }
         filledReferences.forEach(uuid-> {
             if(references.containsKey(uuid))
@@ -197,32 +202,40 @@ public final class Mixson implements ModInitializer {
         final Set<UUID> filledReferences = new HashSet<>();
         while(runtime.hasFinished()) {
             AbstractEntry entry = runtime.pop();
-            if(entry instanceof ReferenceEntry<?> referenceEntry) {
-                int ordinal = entry.getOrdinal();
-                BuiltResourceReference<?> ref = referenceEntry.reference();
-                if(!ref.getResourceId().withSuffix(ref.getCodec().extensionAndDot()).equals(id)) continue;
-                if(ordinal >= original.size()) ordinalError(ordinal, original.size()-1, ref, ref.getResourceId());
-                Resource resource = original.get(ordinal);
-                fulfillReference(resource, ref, filledReferences);
-                continue;
-            }
-            EventEntry<?> eventEntry = (EventEntry<?>) entry;
-            BuiltMixsonEvent<?> event = eventEntry.event();
-            int fileOperations = 0;
-            if(!event.isApplicable(id)) continue;
-            int ordinal = eventEntry.getOrdinal();
-            if(ordinal >= original.size()) ordinalError(ordinal, original.size()-1, event, id);
-            if(ordinal == -1) {
-                int toIter = original.size();
-                for (int i = 0; i < toIter; i++) {
-                    processNamespaceEvent(original, runtime, markedForDeletion, eventEntry, id, i);
-                    fileOperations++;
+            switch(entry) {
+                case ReferenceEntry<?> referenceEntry -> {
+                    int ordinal = entry.getOrdinal();
+                    BuiltResourceReference<?> ref = referenceEntry.reference();
+                    if(!ref.getResourceId().withSuffix(ref.getCodec().extensionAndDot()).equals(id)) continue;
+                    if(ordinal >= original.size()) ordinalError(ordinal, original.size()-1, ref, ref.getResourceId());
+                    Resource resource = original.get(ordinal);
+                    fulfillReference(resource, ref, filledReferences);
                 }
-            }else {
-                processNamespaceEvent(original, runtime, markedForDeletion, eventEntry, id, ordinal);
-                fileOperations++;
+
+                case EventEntry<?> eventEntry -> {
+                    BuiltMixsonEvent<?> event = eventEntry.event();
+                    int fileOperations = 0;
+                    if(!event.isApplicable(id)) continue;
+                    logVerboseAction("begun processing event '{}'", entry.getName());
+                    ReadableTimer timer = new ReadableTimer();
+                    int ordinal = eventEntry.getOrdinal();
+                    if(ordinal >= original.size()) ordinalError(ordinal, original.size()-1, event, id);
+                    if(ordinal == -1) {
+                        int toIter = original.size();
+                        for (int i = 0; i < toIter; i++) {
+                            processNamespaceEvent(original, runtime, markedForDeletion, eventEntry, id, i);
+                            fileOperations++;
+                        }
+                    }else {
+                        processNamespaceEvent(original, runtime, markedForDeletion, eventEntry, id, ordinal);
+                        fileOperations++;
+                    }
+                    incrementCallCounts(event, fileOperations);
+                    logVerboseAction("successfully finished processing event '{}' in {}", entry.getName(), timer.timestamp());
+                }
+
+                default -> throw new IllegalStateException("Unexpected value: " + entry);
             }
-            incrementCallCounts(event, fileOperations);
         }
         filledReferences.forEach(uuid-> {
             if(references.containsKey(uuid))
@@ -235,15 +248,23 @@ public final class Mixson implements ModInitializer {
 
     // INTERNAL RUN METHODS
 
-    private static <T, M, K> void beginEventProcessing(QuintConsumer<Map<ResourceLocation, K>, MixsonRuntime, Set<T>, EventEntry<M>, ResourceLocation> processor, Map<ResourceLocation, K> original, EventEntry<M> entry, MixsonRuntime runtime, Set<T> markedForDeletion) {
+    private static <T, M, K> void beginEventProcessing(QuintFunction<Map<ResourceLocation, K>, MixsonRuntime, Set<T>, EventEntry<M>, ResourceLocation, Boolean> processor, Map<ResourceLocation, K> original, EventEntry<M> entry, MixsonRuntime runtime, Set<T> markedForDeletion) {
         BuiltMixsonEvent<M> event = entry.event();
         int fileOperations = 0;
         List<ResourceLocation> keys = original.keySet().stream().filter(event::isApplicable).sorted(ResourceLocation::compareTo).toList();
+        if(keys.isEmpty() && entry.event().assertive()) throw new MixsonError("assertion on event '%s' failed", entry.getName());
+        if(keys.isEmpty()) return;
+        logEventProcessingStart(entry.getName());
+        ReadableTimer timer = new ReadableTimer();
         for(ResourceLocation resourceId : keys) {
             fileOperations++;
-            processor.accept(original, runtime, markedForDeletion, entry, resourceId);
+            if(processor.accept(original, runtime, markedForDeletion, entry, resourceId)) {
+                logAction("event '{}' cancelled further processing", event.eventName());
+                break;
+            }
         }
         if(fileOperations != 0) incrementCallCounts(event, fileOperations);
+        logVerboseAction("successfully finished processing event '{}' in {}", entry.getName(), timer.timestamp());
     }
 
     private static <T> void processNamespaceEvent(List<Resource> original, MixsonRuntime runtime, Set<Integer> markedForDeletion, EventEntry<T> eventEntry, ResourceLocation resourceId, int i) {
@@ -252,7 +273,20 @@ public final class Mixson implements ModInitializer {
         Optional<T> file = getFile(event.codec(), resource, event, resourceId, Mixson::runtimeError);
         if (file.isEmpty()) return;
         try {
-            EventContext<T> context = processContext(runtime, markedForDeletion, eventEntry, event, resourceId, i, file.get());
+            EventContext<T> context = processContext(runtime, markedForDeletion, eventEntry, event, resourceId, i, file.get(), (stringId, ordinal) -> {
+                if(!stringId.equals(resourceId.toString())) runtimeError(new IllegalStateException(String.format("cannot capture resource with id '%s' if event id is '%s'", stringId, resourceId)), event, resourceId);
+                if(ordinal < 0 || ordinal > original.size() - 1) ordinalError(ordinal, original.size()-1, eventEntry.event(), resourceId);
+                ResourceLocation id = ResourceLocation.parse(stringId);
+                Resource refResource = original.get(ordinal);
+                if(refResource == null) return null;
+                try {
+                    return eventEntry.event().codec().deserialize(refResource);
+                } catch (IOException e) {
+                    runtimeError(e, event, id);
+
+                }
+                return null;
+            });
             for(T createdEntry : context.getIndexedCreatedResources())
                 original.add(event.codec().serialize(resource, createdEntry));
             original.set(i, event.codec().serialize(resource, context.getFile()));
@@ -261,72 +295,115 @@ public final class Mixson implements ModInitializer {
         }
     }
 
-    private static <T> void prepareListEventProcessing(Map<ResourceLocation, List<Resource>> original, MixsonRuntime runtime, Set<Pair<ResourceLocation, Integer>> markedForDeletion, EventEntry<T> eventEntry, ResourceLocation resourceId) {
+    private static <T> boolean prepareListEventProcessing(Map<ResourceLocation, List<Resource>> original, MixsonRuntime runtime, Set<Pair<ResourceLocation, Integer>> markedForDeletion, EventEntry<T> eventEntry, ResourceLocation resourceId) {
         BuiltMixsonEvent<T> event = eventEntry.event();
         List<Resource> resources = original.get(resourceId);
         int ordinal = eventEntry.getOrdinal();
         if(ordinal >= resources.size()) ordinalError(ordinal, resources.size()-1, event, resourceId);
-        if(ordinal == -1)
-            for(int i = 0; i < resources.size(); i++)
-                processListEvent(original, resourceId, resources, i, event, runtime, eventEntry, markedForDeletion);
-        else
-            processListEvent(original, resourceId, resources, ordinal, event, runtime, eventEntry, markedForDeletion);
+        if(ordinal == -1) {
+            for (int i = 0; i < resources.size(); i++)
+                if (processListEvent(original, resourceId, resources, i, event, runtime, eventEntry, markedForDeletion))
+                    return true;
+        } else
+            return processListEvent(original, resourceId, resources, ordinal, event, runtime, eventEntry, markedForDeletion);
+        return false;
     }
 
-    private static <T> void processListEvent(Map<ResourceLocation, List<Resource>> original, ResourceLocation resourceId, List<Resource> resources, int ordinal, BuiltMixsonEvent<T> event, MixsonRuntime runtime, EventEntry<T> eventEntry, Set<Pair<ResourceLocation, Integer>> markedForDeletion) {
+    private static <T> boolean processListEvent(Map<ResourceLocation, List<Resource>> original, ResourceLocation resourceId, List<Resource> resources, int ordinal, BuiltMixsonEvent<T> event, MixsonRuntime runtime, EventEntry<T> eventEntry, Set<Pair<ResourceLocation, Integer>> markedForDeletion) {
         Resource resource = resources.get(ordinal);
         Pair<ResourceLocation, Integer> pairedId = Pair.of(resourceId, ordinal);
-        Optional<T> file = getFile(event.codec(), resources.get(ordinal), event, resourceId, Mixson::runtimeError);
-        if (file.isEmpty()) return;
+        Optional<T> file = getFile(event.codec(), resource, event, resourceId, Mixson::runtimeError);
+        if (file.isEmpty()) return false;
         try {
-            EventContext<T> context = processContext(runtime, markedForDeletion, eventEntry, event, resourceId, pairedId, file.get());
-            context.getCancelledFutures().forEach(runtime::cancelEvent);
+            EventContext<T> context = processContext(runtime, markedForDeletion, eventEntry, event, resourceId, pairedId, file.get(), (stringId, captureOrdinal) -> {
+                if(captureOrdinal < 0 || captureOrdinal > original.size()-1) ordinalError(captureOrdinal, original.size()-1, eventEntry.event(), resourceId);
+                ResourceLocation id = ResourceLocation.parse(stringId);
+                List<Resource> resourceList = original.get(id.withSuffix(event.codec().extensionAndDot()));
+                if(resourceList == null) return null;
+                Resource refResource = resourceList.get(captureOrdinal);
+                if(refResource == null) return null;
+                try {
+                    return eventEntry.event().codec().deserialize(refResource);
+                } catch (IOException e) {
+                    runtimeError(e, event, id);
+
+                }
+                return null;
+            });
+
             for(Map.Entry<ResourceLocation, T> createdEntry : context.getIdentifiedCreatedResources().entrySet()) {
-                List<Resource> createdResources = original.computeIfAbsent(createdEntry.getKey(), (unused) -> new ArrayList<>());
+                ResourceLocation createdId = createdEntry.getKey();
+                if(!createdId.getPath().endsWith(event.codec().extensionAndDot()))
+                    logWarning("created resource '{}' does not end with its codec's extension '{}'", createdId, event.codec().extensionAndDot());
+                List<Resource> createdResources = original.computeIfAbsent(createdId, (unused) -> new ArrayList<>());
                 createdResources.add(event.codec().serialize(resource, createdEntry.getValue()));
             }
             resources.set(ordinal, event.codec().serialize(resource, context.getFile()));
+            return context.getCancelledFutures().contains(event.uuid());
         } catch (Exception e) {
             runtimeError(e, event, resourceId);
         }
+        return false;
     }
 
 
-    private static <T> void processStandardEvent(Map<ResourceLocation, Resource> original, MixsonRuntime runtime, Set<ResourceLocation> markedForDeletion, EventEntry<T> eventEntry, ResourceLocation resourceId) {
+    private static <T> boolean processStandardEvent(Map<ResourceLocation, Resource> original, MixsonRuntime runtime, Set<ResourceLocation> markedForDeletion, EventEntry<T> eventEntry, ResourceLocation resourceId) {
         BuiltMixsonEvent<T> event = eventEntry.event();
         Resource resource = original.get(resourceId);
         Optional<T> file = getFile(event.codec(), resource, event, resourceId, Mixson::runtimeError);
-        if (file.isEmpty()) return;
+        if (file.isEmpty()) return false;
         try {
-            EventContext<T> context = processContext(runtime, markedForDeletion, eventEntry, event, resourceId, resourceId, file.get());
-            for(Map.Entry<ResourceLocation, T> createdEntry : context.getIdentifiedCreatedResources().entrySet())
-                original.put(createdEntry.getKey(), event.codec().serialize(resource, createdEntry.getValue()));
+            EventContext<T> context = processContext(runtime, markedForDeletion, eventEntry, event, resourceId, resourceId, file.get(), (stringId, ordinal) -> {
+                if(ordinal > 0) ordinalError(ordinal, 0, eventEntry.event(), resourceId);
+                ResourceLocation id = ResourceLocation.parse(stringId);
+                Resource refResource = original.get(id.withSuffix(event.codec().extensionAndDot()));
+                if(refResource == null) return null;
+                try {
+                    return eventEntry.event().codec().deserialize(refResource);
+                } catch (IOException e) {
+                    runtimeError(e, event, id);
+
+                }
+                return null;
+            });
+            for(Map.Entry<ResourceLocation, T> createdEntry : context.getIdentifiedCreatedResources().entrySet()) {
+                ResourceLocation createdId = createdEntry.getKey();
+                if(!createdId.getPath().endsWith(event.codec().extensionAndDot()))
+                    logWarning("created resource '{}' does not end with its codec's extension '{}'", createdId, event.codec().extensionAndDot());
+                original.put(createdId, event.codec().serialize(resource, createdEntry.getValue()));
+            }
             original.put(resourceId, event.codec().serialize(resource, context.getFile()));
+            return context.getCancelledFutures().contains(event.uuid());
         } catch (Exception e) {
             runtimeError(e, event, resourceId);
         }
+        return false;
     }
 
-    private static <N, T> @NotNull EventContext<T> processContext(MixsonRuntime runtime, Set<N> markedForDeletion, EventEntry<T> eventEntry, BuiltMixsonEvent<T> event, ResourceLocation resourceId, N indexer, T file) {
-        EventContext<T> context = MixsonUtil.createContext(ContextCreationType.IDENTIFIED, resourceId, file, eventEntry, markedForDeletion.contains(indexer), uuid -> runtime.getReference(uuid, references::get));
+    private static <N, T> @NotNull EventContext<T> processContext(MixsonRuntime runtime, Set<N> markedForDeletion, EventEntry<T> eventEntry, BuiltMixsonEvent<T> event, ResourceLocation resourceId, N indexer, T file, BiFunction<String, Integer, T> captureCallback) {
+        EventContext<T> context = createContext(ContextCreationType.IDENTIFIED, resourceId, file, eventEntry, markedForDeletion.contains(indexer), uuid -> runtime.getReference(uuid, references::get), captureCallback);
         logEventRun(event, resourceId);
+        ReadableTimer timer = new ReadableTimer();
         event.event().runEvent(context);
-        exportDebugFile(event.codec()::serializeOutputFile, context.getFile(), event.eventName(), resourceId.toString(), event.codec().extensionAndDot());
+        logEventExit(event, resourceId, timer);
+        T debugExport = context.getDebugExportObject();
+        if(debugExport != null)
+            exportDebugFile(event.codec()::serializeOutputFile, debugExport, event.eventName(), resourceId.toString(), event.codec().extensionAndDot());
         if(context.isMarkedForDeletion()) markedForDeletion.add(indexer);
         else markedForDeletion.remove(indexer);
         context.getCancelledFutures().forEach(runtime::cancelEvent);
         List<AbstractEntry> appendable = new ArrayList<>();
-        for(HexRecord<Integer, Function<ResourceLocation, Boolean>, String, MixsonEvent<T>, Boolean, ResourceReference[]> createdEvent : context.getCreatedEvents()) {
-            BuiltMixsonEvent<T> builtEvent = createdEvent.apply((integer, locator, string2, mixsonEvent, aBoolean, resourceReferences) -> buildMixsonEvent(event.codec(), integer, locator, string2, mixsonEvent, aBoolean, resourceReferences, (integer1, reference) -> {
-                appendable.add(new ReferenceEntry<>(integer1, reference));
-                finalizeReferenceRegistration(integer1, reference);
-            }));
-            appendable.add(new EventEntry<>(createdEvent.first(), builtEvent));
-            finalizeEventRegistration(createdEvent.first(), builtEvent);
+        for(Map.Entry<MixsonEventBuilder<T>, Integer> createdEvent : context.getCreatedEvents().entrySet()) {
+            BuiltMixsonEvent<T> builtEvent = createdEvent.getKey().build(createdEvent.getValue(), (priority, reference) -> {
+                appendable.add(new ReferenceEntry<>(priority, reference));
+                finalizeReferenceRegistration(priority, reference);
+            });
+            appendable.add(new EventEntry<>(createdEvent.getValue(), builtEvent));
+            finalizeEventRegistration(createdEvent.getValue(), builtEvent);
         }
-        for(HexRecord<Integer, Function<ResourceLocation, Boolean>, String, MixsonEvent<T>, Boolean, ResourceReference[]> createdEvent : context.getCreatedRuntimeEvents()) {
-            BuiltMixsonEvent<T> builtEvent = createdEvent.apply((integer, locator, string2, mixsonEvent, aBoolean, resourceReferences) -> buildMixsonEvent(event.codec(), integer, locator, string2, mixsonEvent, aBoolean, resourceReferences, (integer1, reference) -> appendable.add(new ReferenceEntry<>(integer1, reference))));
-            appendable.add(new EventEntry<>(createdEvent.first(), builtEvent));
+        for(Map.Entry<MixsonEventBuilder<T>, Integer> createdEvent : context.getCreatedRuntimeEvents().entrySet()) {
+            BuiltMixsonEvent<T> builtEvent = createdEvent.getKey().build(createdEvent.getValue(), (priority, reference) -> appendable.add(new ReferenceEntry<>(priority, reference)));
+            appendable.add(new EventEntry<>(createdEvent.getValue(), builtEvent));
         }
         appendable.forEach(runtime::insertEntry);
         return context;
@@ -344,7 +421,7 @@ public final class Mixson implements ModInitializer {
 
     // ERRORS
 
-    private static void registrationError(Exception e, ErrorMessageProvider errorMessageProvider) {
+    static void registrationError(Exception e, ErrorMessageProvider errorMessageProvider) {
         if(errorMessageProvider.failSilently()) LOGGER.error(errorMessageProvider.getRegistrationMessage(), e);
         else throw new MixsonError(errorMessageProvider.getRegistrationMessage()+e);
     }
@@ -354,12 +431,8 @@ public final class Mixson implements ModInitializer {
         else throw new MixsonError(errorMessageProvider.getRuntimeMessage(resourceId)+e);
     }
 
-    private static void ordinalError(int ordinal, int maxOrdinal, BuiltMixsonEvent<?> event, ResourceLocation resourceId) {
-        runtimeError(new MixsonError("ordinal value '"+ordinal+"' points to no value. Max Ordinal Value: "+maxOrdinal), event, resourceId);
-    }
-
-    private static void ordinalError(int ordinal, int maxOrdinal, BuiltResourceReference<?> reference, ResourceLocation resourceId) {
-        runtimeError(new MixsonError("ordinal value '"+ordinal+"' points to no value. Max Ordinal Value: "+maxOrdinal), reference, resourceId);
+    private static void ordinalError(int ordinal, int maxOrdinal, ErrorMessageProvider errorMessageProvider, ResourceLocation resourceId) {
+        runtimeError(new MixsonError("ordinal value '"+ordinal+"' points to no value. Max Ordinal Value: "+maxOrdinal), errorMessageProvider, resourceId);
     }
 
     // MISC. PUBLICS
@@ -384,12 +457,32 @@ public final class Mixson implements ModInitializer {
         logAction("Running '{}' on resource '{}'", event.eventName(), resourceId);
     }
 
-    private static void logEventRegistration(String eventName, int priority) {
+    private static void logEventExit(BuiltMixsonEvent<?> event, ResourceLocation resourceId, ReadableTimer timer) {
+        logVerboseAction("Finished running '{}' on resource '{}' in {}", event.eventName(), resourceId, timer.timestamp());
+    }
+
+    static void logEventRegistration(String eventName, int priority) {
         logAction("Registering '{}' with priority {}", eventName, priority);
+    }
+
+    private static void logEventProcessingStart(String eventName) {
+        logVerboseAction("begun processing event '{}'", eventName);
+    }
+
+    private static void logEventProcessingEnd(String eventName) {
+        logVerboseAction("begun processing event '{}'", eventName);
     }
 
     private static void logAction(String action, Object... args) {
         if(debugMode.ordinal() > 0) LOGGER.info(action, args);
+    }
+
+    private static void logWarning(String warning, Object... args) {
+        if(debugMode.ordinal() > 0) LOGGER.warn(warning, args);
+    }
+
+    private static void logVerboseAction(String action, Object... args) {
+        if(debugMode.ordinal() >= DebugMode.VERBOSE.ordinal()) LOGGER.info(action, args);
     }
 
     private static void incrementCallCounts(BuiltMixsonEvent<?> event, int fileOperations) {

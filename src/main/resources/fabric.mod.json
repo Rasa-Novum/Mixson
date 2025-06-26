@@ -3,7 +3,7 @@
   "id": "mixson",
   "version": "${version}",
   "name": "Mixson",
-  "description": "Allows in-code manipulation of .json resources",
+  "description": "Allows in-code manipulation of asset/data resources",
   "authors": [
     "Ramixin"
   ],
@@ -17,6 +17,9 @@
   "entrypoints": {
     "main": [
       "net.ramixin.mixson.inline.Mixson"
+    ],
+    "client": [
+      "net.ramixin.mixson.client.MixsonClient"
     ]
   },
   "depends": {
