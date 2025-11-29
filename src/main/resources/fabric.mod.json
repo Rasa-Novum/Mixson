@@ -14,14 +14,6 @@
   "mixins": [
     "mixson.mixins.json"
   ],
-  "entrypoints": {
-    "main": [
-      "net.ramixin.mixson.inline.Mixson"
-    ],
-    "client": [
-      "net.ramixin.mixson.client.MixsonClient"
-    ]
-  },
   "depends": {
     "fabricloader": ">=${loader_version}",
     "minecraft": ">=1.21"

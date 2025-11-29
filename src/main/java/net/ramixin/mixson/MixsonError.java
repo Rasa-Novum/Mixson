@@ -6,8 +6,4 @@ public class MixsonError extends RuntimeException {
         super(String.format(message, args));
   }
 
-  public MixsonError(Throwable cause) {
-      super(cause);
-  }
-
 }
