@@ -1,27 +1,29 @@
 package net.ramixin.mixson.util;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.ramixin.mixson.util.interfaces.MixsonCodec;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.function.Consumer;
 
+@ApiStatus.Internal
 public interface MixsonUtil {
 
     static String identifierToPathString(String resourceId, String extension) {
-        ResourceLocation usable = ResourceLocation.parse(resourceId);
+        Identifier usable = Identifier.parse(resourceId);
         return usable.getNamespace() + '~' + usable.getPath().replaceFirst(String.format("\\%s", extension), "").replaceAll("/", "-");
     }
 
     static String stringToUsablePath(String string) {
-        return string.replaceAll("[*|/\\\\:?<>\"]", "");
+        return string.replaceAll("[*|/\\\\:?<>\".]", "");
     }
 
-    static ResourceLocation removeExtension(ResourceLocation id) {
+    static Identifier removeExtension(Identifier id) {
         String stringId = id.getPath();
-        for(int i = stringId.length()-1; i > 0; i--) if(stringId.charAt(i) == '.') return ResourceLocation.fromNamespaceAndPath(id.getNamespace(), stringId.substring(0, i));
+        for(int i = stringId.length()-1; i > 0; i--) if(stringId.charAt(i) == '.') return Identifier.fromNamespaceAndPath(id.getNamespace(), stringId.substring(0, i));
         return id;
     }
 
@@ -59,5 +61,4 @@ public interface MixsonUtil {
         if (nanos < 1_000_000_000) return String.format("%.3f ms", nanos / 1_000_000.0);
         return String.format("%.3f s", nanos / 1_000_000_000.0);
     }
-
 }

@@ -1,30 +1,28 @@
 package net.ramixin.mixson;
 
-import net.minecraft.resources.ResourceLocation;
-import net.ramixin.mixson.enums.ErrorPolciy;
-import net.ramixin.mixson.enums.Lifecycle;
+import net.ramixin.mixson.enums.ErrorPolicy;
+import net.ramixin.mixson.enums.Lifetime;
+import net.ramixin.mixson.util.Index;
 import net.ramixin.mixson.util.functions.Event;
 import net.ramixin.mixson.util.interfaces.MixsonCodec;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 public class MixsonEventBuilder<T> {
 
     private MixsonCodec<T> codec;
-    private Predicate<ResourceLocation> resourcePredicate;
+    private Predicate<Index> resourcePredicate;
     private String eventName;
     private Event<T> event;
     private boolean assertive = false;
-    private Lifecycle lifecycle;
-    private ErrorPolciy errorPolciy;
+    private Lifetime lifetime;
+    private ErrorPolicy errorPolicy;
+    private int priority = Mixson.DEFAULT_PRIORITY;
 
-    public MixsonEventBuilder<T> setErrorPolicy(ErrorPolciy errorPolciy) {
-        this.errorPolciy = errorPolciy;
+    public MixsonEventBuilder<T> setErrorPolicy(ErrorPolicy errorPolicy) {
+        this.errorPolicy = errorPolicy;
         return this;
     }
 
@@ -33,7 +31,7 @@ public class MixsonEventBuilder<T> {
         return this;
     }
 
-    public MixsonEventBuilder<T> setResourcePredicate(Predicate<ResourceLocation> resourcePredicate) {
+    public MixsonEventBuilder<T> setResourcePredicate(Predicate<Index> resourcePredicate) {
         this.resourcePredicate = resourcePredicate;
         return this;
     }
@@ -53,30 +51,27 @@ public class MixsonEventBuilder<T> {
         return this;
     }
 
-    public MixsonEventBuilder<T> setLifecycle(Lifecycle lifecycle) {
-        this.lifecycle = lifecycle;
+    public MixsonEventBuilder<T> setLifetime(Lifetime lifetime) {
+        this.lifetime = lifetime;
         return this;
     }
 
-    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    protected @NotNull MixsonEvent<T> build(int priority, Optional<AtomicReference<UUID>> uuidNet) {
+    public MixsonEventBuilder<T> setPriority(int priority) {
+        this.priority = priority;
+        return this;
+    }
+
+    protected @NotNull MixsonEvent<T> build() {
         Objects.requireNonNull(codec, "codec must be set");
         Objects.requireNonNull(resourcePredicate, "resource predicate must be set");
         Objects.requireNonNull(event, "event must be set");
         Objects.requireNonNull(eventName, "event name must be set");
-        Objects.requireNonNull(lifecycle, "lifecycle must be set");
-        Objects.requireNonNull(errorPolciy, "fail policy must be set");
-        boolean fail = event.ordinal() < -1;
+        Objects.requireNonNull(lifetime, "lifetime must be set");
+        Objects.requireNonNull(errorPolicy, "error policy must be set");
 
-        MixsonEvent<T> builtEvent = new MixsonEvent<>(codec, resourcePredicate, eventName, event, errorPolciy, assertive);
+        MixsonEvent<T> builtEvent = new MixsonEvent<>(codec, priority, lifetime, errorPolicy, eventName, resourcePredicate, event, assertive);
         Mixson.logBasic(builtEvent.getRegistrationMessage(priority));
-        uuidNet.ifPresent(net -> net.set(builtEvent.uuid()));
-        if(fail) Mixson.registrationError(new MixsonError("event ordinal value must be greater than or equal to -1"), builtEvent);
         return builtEvent;
-    }
-
-    protected boolean hasDifferentCodec(MixsonCodec<T> codec) {
-        return !this.codec.equals(codec);
     }
 
     public MixsonEventBuilder<T> copy() {
@@ -86,8 +81,8 @@ public class MixsonEventBuilder<T> {
                 .setEventName(String.valueOf(eventName))
                 .setEvent(event)
                 .setAssertive(assertive)
-                .setErrorPolicy(errorPolciy)
-                .setLifecycle(lifecycle);
+                .setErrorPolicy(errorPolicy)
+                .setPriority(priority)
+                .setLifetime(lifetime);
     }
-
 }

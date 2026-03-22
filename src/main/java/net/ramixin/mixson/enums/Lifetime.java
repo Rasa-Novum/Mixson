@@ -1,9 +1,7 @@
 package net.ramixin.mixson.enums;
 
-public enum Lifecycle {
-
+public enum Lifetime {
     PERSISTENT,
     ONCE,
-    RUNTIME
-
+    DEFERRED
 }

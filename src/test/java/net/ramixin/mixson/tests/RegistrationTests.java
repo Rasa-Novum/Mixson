@@ -1,11 +1,10 @@
 package net.ramixin.mixson.tests;
 
 import com.google.gson.JsonElement;
-import net.minecraft.resources.ResourceLocation;
-import net.ramixin.mixson.enums.ErrorPolciy;
-import net.ramixin.mixson.enums.Lifecycle;
 import net.ramixin.mixson.Mixson;
 import net.ramixin.mixson.ResourceReference;
+import net.ramixin.mixson.enums.ErrorPolicy;
+import net.ramixin.mixson.enums.Lifetime;
 import net.ramixin.mixson.util.Index;
 import org.junit.jupiter.api.Test;
 
@@ -15,14 +14,13 @@ public class RegistrationTests {
 
     @Test
     public void testEventRegistration() {
-        ResourceLocation resourceId = ResourceLocation.parse("test:test");
         UUID eventId = Mixson.registerEvent(
                 Mixson.DEFAULT_PRIORITY,
-                Lifecycle.PERSISTENT,
-                resourceId::equals,
+                Lifetime.PERSISTENT,
+                ErrorPolicy.THROW,
                 "testEventRegistration",
-                ErrorPolciy.THROW,
-                context -> {}
+                (_) -> false,
+                _ -> {}
         );
         assert Mixson.has(eventId) : "Event was not registered";
     }

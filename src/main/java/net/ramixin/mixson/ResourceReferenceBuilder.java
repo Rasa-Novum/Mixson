@@ -10,6 +10,7 @@ public class ResourceReferenceBuilder<T> {
     private MixsonCodec<T> codec;
     private Index index;
     private String referenceName;
+    private int priority = Mixson.DEFAULT_PRIORITY;
 
     public ResourceReferenceBuilder<T> setCodec(MixsonCodec<T> codec) {
         this.codec = codec;
@@ -26,11 +27,16 @@ public class ResourceReferenceBuilder<T> {
         return this;
     }
 
-    public ResourceReference<T> build(int priority) {
+    public ResourceReferenceBuilder<T> setPriority(int priority) {
+        this.priority = priority;
+        return this;
+    }
+
+    public ResourceReference<T> build() {
         Objects.requireNonNull(codec, "codec must be set");
         Objects.requireNonNull(index, "index must be set");
         Objects.requireNonNull(referenceName, "reference name must be set");
-        ResourceReference<T> ref = new ResourceReference<>(codec, index, referenceName);
+        ResourceReference<T> ref = new ResourceReference<>(codec, priority, index, referenceName);
         Mixson.logBasic(ref.getRegistrationMessage(priority));
         return ref;
     }
@@ -39,8 +45,7 @@ public class ResourceReferenceBuilder<T> {
         return new ResourceReferenceBuilder<T>()
                 .setCodec(codec)
                 .setIndex(index.copy())
+                .setPriority(priority)
                 .setReferenceName(String.valueOf(referenceName));
     }
-
-
 }

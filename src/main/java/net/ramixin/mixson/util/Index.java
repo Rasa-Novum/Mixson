@@ -1,20 +1,31 @@
 package net.ramixin.mixson.util;
 
-import net.minecraft.resources.ResourceLocation;
-import org.jetbrains.annotations.Range;
+import net.minecraft.resources.Identifier;
 
-public record Index(ResourceLocation id, @Range(from = -1, to = Integer.MAX_VALUE) int ordinal) implements Comparable<Index> {
+import java.util.Objects;
 
-    public Index(String stringId, int ordinal) {
-        this(ResourceLocation.parse(stringId), ordinal);
+@SuppressWarnings("ClassCanBeRecord") // NO IT CANNOT
+public final class Index implements Comparable<Index> {
+
+    private final Identifier id;
+    private final int ordinal;
+
+    public Index(Identifier id, int ordinal) {
+        this.id = id;
+        if(ordinal < -1) throw new IllegalArgumentException("Ordinal must be greater than or equal to -1");
+        this.ordinal = ordinal;
     }
 
-    public Index(ResourceLocation id) {
-        this(id, -1);
+    public Index(String stringId, int ordinal) {
+        this(Identifier.parse(stringId), ordinal);
+    }
+
+    public Index(Identifier id) {
+        this(id, 0);
     }
 
     public Index(String stringId) {
-        this(ResourceLocation.parse(stringId), -1);
+        this(Identifier.parse(stringId), 0);
     }
 
     public Index withSuffixedId(String suffix) {
@@ -40,9 +51,30 @@ public record Index(ResourceLocation id, @Range(from = -1, to = Integer.MAX_VALU
         return Integer.compare(this.ordinal, other.ordinal);
     }
 
-
-    public Index copy() {
-        return new Index(ResourceLocation.parse(id.toString()), ordinal);
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Index index)) return false;
+        return ordinal == index.ordinal && Objects.equals(id, index.id);
     }
 
+    public boolean idEquals(Index other) {
+        return this.id.equals(other.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, ordinal);
+    }
+
+    public Index copy() {
+        return new Index(Identifier.parse(id.toString()), ordinal);
+    }
+
+    public Identifier id() {
+        return id;
+    }
+
+    public int ordinal() {
+        return ordinal;
+    }
 }

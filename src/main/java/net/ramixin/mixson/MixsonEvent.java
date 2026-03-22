@@ -1,22 +1,26 @@
 package net.ramixin.mixson;
 
-import net.minecraft.resources.ResourceLocation;
-import net.ramixin.mixson.enums.ErrorPolciy;
+import net.minecraft.resources.Identifier;
+import net.ramixin.mixson.enums.ErrorPolicy;
+import net.ramixin.mixson.enums.Lifetime;
+import net.ramixin.mixson.util.Index;
 import net.ramixin.mixson.util.functions.Event;
 import net.ramixin.mixson.util.interfaces.ErrorMessageProvider;
 import net.ramixin.mixson.util.interfaces.MixsonCodec;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.UUID;
 import java.util.function.Predicate;
 
-public record MixsonEvent<T>(MixsonCodec<T> codec, UUID uuid, Predicate<ResourceLocation> resourcePredicate, String eventName, Event<T> event, ErrorPolciy errorPolciy, boolean assertive) implements ErrorMessageProvider {
+@ApiStatus.Internal
+public record MixsonEvent<T>(UUID uuid, MixsonCodec<T> codec, int priority, Lifetime lifetime, ErrorPolicy errorPolicy, String eventName, Predicate<Index> resourcePredicate, Event<T> event, boolean assertive) implements ErrorMessageProvider {
 
-    public MixsonEvent(MixsonCodec<T> codec, Predicate<ResourceLocation> resourcePredicate, String eventId, Event<T> event, ErrorPolciy errorPolciy, boolean assertive) {
-        this(codec, UUID.randomUUID(), resourcePredicate, eventId, event, errorPolciy, assertive);
+    public MixsonEvent(MixsonCodec<T> codec, int priority, Lifetime lifetime, ErrorPolicy errorPolicy, String eventName, Predicate<Index> resourcePredicate, Event<T> event, boolean assertive) {
+        this(UUID.randomUUID(), codec, priority, lifetime, errorPolicy, eventName, resourcePredicate, event, assertive);
     }
 
     @Override
-    public String getRuntimeErrorMessage(ResourceLocation resourceId) {
+    public String getRuntimeErrorMessage(Identifier resourceId) {
         return String.format("Failed to interact with %s file '%s' with event '%s'\n", codec.extensionAndDot(), resourceId, eventName);
     }
 
@@ -26,17 +30,18 @@ public record MixsonEvent<T>(MixsonCodec<T> codec, UUID uuid, Predicate<Resource
     }
 
     @Override
-    public ErrorPolciy getErrorPolicy() {
-        return errorPolciy;
+    public ErrorPolicy getErrorPolicy() {
+        return errorPolicy;
     }
 
-    public Predicate<ResourceLocation> getWrappedPredicate() {
-        return (id) -> {
+    public Predicate<Index> getWrappedPredicate() {
+        return (index) -> {
             String ext = codec.extensionAndDot();
+            Identifier id = index.id();
             if(!id.getPath().endsWith(ext))
                 return false;
-            ResourceLocation trimmedLocation = ResourceLocation.fromNamespaceAndPath(id.getNamespace(), id.getPath().substring(0, id.getPath().length() - ext.length()));
-            return resourcePredicate.test(trimmedLocation);
+            Identifier trimmedLocation = Identifier.fromNamespaceAndPath(id.getNamespace(), id.getPath().substring(0, id.getPath().length() - ext.length()));
+            return resourcePredicate.test(new Index(trimmedLocation, index.ordinal()));
         };
     }
 

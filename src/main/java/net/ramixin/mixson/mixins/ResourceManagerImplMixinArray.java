@@ -1,7 +1,7 @@
 package net.ramixin.mixson.mixins;
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.MultiPackResourceManager;
 import net.minecraft.server.packs.resources.ReloadableResourceManager;
 import net.minecraft.server.packs.resources.Resource;
@@ -18,13 +18,12 @@ import java.util.Map;
 public class ResourceManagerImplMixinArray {
 
     @ModifyReturnValue(method = "listResources", at = @At("RETURN"))
-    private Map<ResourceLocation, Resource> runMixsonEvents(Map<ResourceLocation, Resource> original) {
+    private Map<Identifier, Resource> runMixsonEvents(Map<Identifier, Resource> original) {
         return Mixson.processHook(new StandardHook(original));
     }
 
     @ModifyReturnValue(method = "listResourceStacks", at = @At("RETURN"))
-    private Map<ResourceLocation, List<Resource>> runListMixsonEvents(Map<ResourceLocation, List<Resource>> original) {
+    private Map<Identifier, List<Resource>> runListMixsonEvents(Map<Identifier, List<Resource>> original) {
         return Mixson.processHook(new ListHook(original));
     }
-
 }

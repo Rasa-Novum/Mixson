@@ -1,11 +1,10 @@
 package net.ramixin.mixson;
 
-import net.minecraft.resources.ResourceLocation;
-import net.ramixin.mixson.enums.ErrorPolciy;
+import net.minecraft.resources.Identifier;
+import net.ramixin.mixson.enums.ErrorPolicy;
 import net.ramixin.mixson.util.Index;
 import net.ramixin.mixson.util.interfaces.ErrorMessageProvider;
 import net.ramixin.mixson.util.interfaces.MixsonCodec;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -14,19 +13,17 @@ import java.util.UUID;
 public class ResourceReference<T> implements ErrorMessageProvider {
 
     private T resource;
-
     private final String referenceName;
-
     private final Index index;
-
     private final UUID uuid = UUID.randomUUID();
-
     private final MixsonCodec<T> codec;
+    private final int priority;
 
-    protected ResourceReference(MixsonCodec<T> codec, @NotNull Index index, String referenceName) {
+    protected ResourceReference(MixsonCodec<T> codec, int priority, Index index, String referenceName) {
         this.index = index;
         this.referenceName = referenceName;
         this.codec = codec;
+        this.priority = priority;
     }
 
     public Optional<T> retrieve() {
@@ -51,7 +48,7 @@ public class ResourceReference<T> implements ErrorMessageProvider {
         return index;
     }
 
-    public ResourceLocation getResourceId() {
+    public Identifier getResourceId() {
         return index.id();
     }
 
@@ -67,8 +64,12 @@ public class ResourceReference<T> implements ErrorMessageProvider {
         return codec;
     }
 
+    public int getPriority() {
+        return priority;
+    }
+
     @Override
-    public String getRuntimeErrorMessage(ResourceLocation resourceId) {
+    public String getRuntimeErrorMessage(Identifier resourceId) {
         return String.format("Failed to capture %s file '%s' for reference '%s'\n", codec.extensionAndDot(), resourceId, referenceName);
     }
 
@@ -78,8 +79,8 @@ public class ResourceReference<T> implements ErrorMessageProvider {
     }
 
     @Override
-    public ErrorPolciy getErrorPolicy() {
-        return ErrorPolciy.THROW;
+    public ErrorPolicy getErrorPolicy() {
+        return ErrorPolicy.THROW;
     }
 
     @Override

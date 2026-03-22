@@ -1,7 +1,5 @@
 package net.ramixin.mixson.hooks;
 
-import io.netty.util.internal.UnstableApi;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.ramixin.mixson.util.Index;
 
@@ -10,7 +8,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 
-@UnstableApi
 public abstract class AbstractHook<T> {
 
     protected final T attachedResources;
@@ -19,11 +16,9 @@ public abstract class AbstractHook<T> {
         this.attachedResources = attachedResources;
     }
 
+    public abstract Optional<List<Resource>> captureFiles(Index index, String fileExt);
 
-
-    public abstract Optional<List<Resource>> captureFiles(Index index);
-
-    public abstract List<Map.Entry<Index, Resource>> getMatching(Predicate<ResourceLocation> predicate);
+    public abstract List<Map.Entry<Index, Resource>> getMatching(Predicate<Index> predicate);
 
     public abstract void insert(Index index, List<Resource> resources, String fileExt, boolean overwrite);
 

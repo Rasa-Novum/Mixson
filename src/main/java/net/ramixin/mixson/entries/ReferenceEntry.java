@@ -1,7 +1,9 @@
 package net.ramixin.mixson.entries;
 
 import net.ramixin.mixson.ResourceReference;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 public class ReferenceEntry<T> extends AbstractEntry {
 
     private final ResourceReference<T> reference;

@@ -1,7 +1,9 @@
 package net.ramixin.mixson.entries;
 
 import net.ramixin.mixson.MixsonEvent;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 public class EventEntry<T> extends AbstractEntry {
 
     private final MixsonEvent<T> event;

@@ -2,25 +2,20 @@ package net.ramixin.mixson;
 
 
 import com.google.gson.JsonElement;
-import io.netty.util.internal.UnstableApi;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.ramixin.mixson.entries.AbstractEntry;
 import net.ramixin.mixson.entries.EventEntry;
 import net.ramixin.mixson.entries.ReferenceEntry;
 import net.ramixin.mixson.enums.DebugOption;
-import net.ramixin.mixson.enums.ErrorPolciy;
-import net.ramixin.mixson.enums.Lifecycle;
+import net.ramixin.mixson.enums.ErrorPolicy;
+import net.ramixin.mixson.enums.Lifetime;
 import net.ramixin.mixson.hooks.AbstractHook;
 import net.ramixin.mixson.util.Index;
-import net.ramixin.mixson.util.QuadRecord;
 import net.ramixin.mixson.util.functions.Event;
 import net.ramixin.mixson.util.interfaces.ErrorMessageProvider;
 import net.ramixin.mixson.util.interfaces.MixsonCodec;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.mutable.Mutable;
-import org.apache.commons.lang3.mutable.MutableObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,8 +26,6 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import static net.ramixin.mixson.util.MixsonUtil.*;
@@ -46,6 +39,8 @@ public final class Mixson {
     private static final SortedMap<Integer, List<MixsonEvent<?>>> orderedEvents = new ConcurrentSkipListMap<>();
     private static final Map<UUID, ResourceReference<?>> references = new ConcurrentHashMap<>();
     private static final SortedMap<Integer, List<ResourceReference<?>>> orderedReferences = new ConcurrentSkipListMap<>();
+    private static final Map<UUID, MixsonEvent<?>> deferredEvents = new ConcurrentHashMap<>();
+
     public static final int DEFAULT_PRIORITY = 1000;
 
     private Mixson() {
@@ -54,24 +49,29 @@ public final class Mixson {
 
     // EVENT REGISTRATION METHODS
 
-    public static UUID registerEvent(int priority, Lifecycle lifecycle, Predicate<ResourceLocation> resourcePredicate, String eventName, ErrorPolciy errorPolciy, Event<JsonElement> event) {
-        return registerEvent(MixsonCodecs.JSON_ELEMENT, priority, lifecycle, resourcePredicate, eventName, errorPolciy, event);
+    public static UUID registerEvent(int priority, Lifetime lifetime, ErrorPolicy errorPolicy, String eventName, Predicate<Index> resourcePredicate, Event<JsonElement> event) {
+        return registerEvent(MixsonCodecs.JSON_ELEMENT, priority, lifetime, errorPolicy, eventName, resourcePredicate, event);
     }
 
-    public static <T> UUID registerEvent(MixsonCodec<T> codec, int priority, Lifecycle lifecycle, Predicate<ResourceLocation> resourcePredicate, String eventName, ErrorPolciy errorPolciy, Event<T> event) {
-        return registerEvent(priority, new MixsonEventBuilder<T>()
+    public static <T> UUID registerEvent(MixsonCodec<T> codec, int priority, Lifetime lifetime, ErrorPolicy errorPolicy, String eventName, Predicate<Index> resourcePredicate, Event<T> event) {
+        return registerEvent(new MixsonEventBuilder<T>()
                 .setCodec(codec)
-                .setResourcePredicate(resourcePredicate)
+                .setPriority(priority)
+                .setLifetime(lifetime)
+                .setErrorPolicy(errorPolicy)
                 .setEventName(eventName)
+                .setResourcePredicate(resourcePredicate)
                 .setEvent(event)
-                .setLifecycle(lifecycle)
-                .setErrorPolicy(errorPolciy)
         );
     }
 
-    public static <T> UUID registerEvent(int priority, MixsonEventBuilder<T> builder) {
-        MixsonEvent<T> builtEvent = builder.build(priority, Optional.empty());
-        return finalizeEventRegistration(priority, builtEvent);
+    public static <T> UUID registerEvent(MixsonEventBuilder<T> builder) {
+        MixsonEvent<T> builtEvent = builder.build();
+        if(builtEvent.lifetime() == Lifetime.DEFERRED) {
+            deferredEvents.put(builtEvent.uuid(), builtEvent);
+            return builtEvent.uuid();
+        }
+        return finalizeEventRegistration(builtEvent);
     }
 
     public static ResourceReference<JsonElement> registerReference(int priority, Index index, String referenceName) {
@@ -79,66 +79,60 @@ public final class Mixson {
     }
 
     public static <T> ResourceReference<T> registerReference(MixsonCodec<T> codec, int priority, Index index, String referenceName) {
-        return registerReference(priority, new ResourceReferenceBuilder<T>()
+        return registerReference(new ResourceReferenceBuilder<T>()
                 .setCodec(codec)
                 .setIndex(index)
                 .setReferenceName(referenceName)
+                .setPriority(priority)
         );
     }
 
-    public static <T> ResourceReference<T> registerReference(int priority, ResourceReferenceBuilder<T> builder) {
-        ResourceReference<T> ref = builder.build(priority);
-        addComponent(ref, priority, ref.getUuid(), references, orderedReferences);
+    public static <T> ResourceReference<T> registerReference(ResourceReferenceBuilder<T> builder) {
+        ResourceReference<T> ref = builder.build();
+        addComponent(ref, ref.getPriority(), ref.getUuid(), references, orderedReferences);
         return ref;
     }
 
     // SEPARATED REGISTRATION
 
-    private static <T> UUID finalizeEventRegistration(int priority, MixsonEvent<T> builtEvent) {
-        addComponent(builtEvent, priority, builtEvent.uuid(), events, orderedEvents);
+    private static <T> UUID finalizeEventRegistration(MixsonEvent<T> builtEvent) {
+        addComponent(builtEvent, builtEvent.priority(), builtEvent.uuid(), events, orderedEvents);
         return builtEvent.uuid();
     }
 
     // EXTERNAL RUN METHODS
 
-    @UnstableApi
     public static <T> T processHook(AbstractHook<T> hook) {
-        MixsonRuntime runtime = new MixsonRuntime(orderedEvents, orderedReferences);
+        MixsonRuntime<T> runtime = new MixsonRuntime<>(hook, orderedEvents, orderedReferences, LOGGER::error);
         while(runtime.isRunning()) {
             AbstractEntry entry = runtime.pop();
             switch(entry) {
-                case ReferenceEntry<?> referenceEntry -> handleReference(referenceEntry, hook);
-                case EventEntry<?> eventEntry -> handleEvent(eventEntry, hook, runtime::cancelEvent, runtime::insertEntry);
+                case ReferenceEntry<?> referenceEntry -> handleReference(referenceEntry, runtime);
+                //noinspection rawtypes
+                case EventEntry eventEntry -> //noinspection unchecked
+                        handleEvent(eventEntry, runtime);
                 default -> throw new IllegalStateException("Unexpected value: " + entry);
             }
         }
         return hook.getAttachedResources();
     }
 
-    private static <T, R> void handleReference(ReferenceEntry<R> referenceEntry, AbstractHook<T> hook) {
+    private static <T, R> void handleReference(ReferenceEntry<R> referenceEntry, MixsonRuntime<T> runtime) {
         ResourceReference<R> ref = referenceEntry.reference();
-        if(getDebugFlag(DebugOption.PREVENT_CATCHING))
-            try {
-                processReference(hook, ref);
-            } catch (IOException e) {
-                runtimeError(e, ref, ref.getResourceId());
-            }
-        else {
-            try {
-                processReference(hook, ref);
-            } catch (Exception e) {
-                runtimeError(e, ref, ref.getResourceId());
-            }
+        try {
+            processReference(ref, runtime);
+        } catch (IOException e) {
+            runtime.error(e, ref, ref.getResourceId());
         }
     }
 
-    private static <T, R> void processReference(AbstractHook<T> hook, ResourceReference<R> ref) throws IOException {
-        Optional<List<Resource>> maybeResource = hook.captureFiles(ref.getIndex());
+    private static <T, R> void processReference(ResourceReference<R> ref, MixsonRuntime<T> runtime) throws IOException {
+        Optional<List<Resource>> maybeResource = runtime.getHook().captureFiles(ref.getIndex(), ref.getCodec().extensionAndDot());
         if(maybeResource.isEmpty()) return;
         List<Resource> resource = maybeResource.get();
         if(resource.isEmpty()) return;
         if(resource.size() > 1) {
-            runtimeError(new MixsonError("resource reference cannot match more than 1 resource"), ref, ref.getIndex().id());
+            runtime.error(new MixsonException("resource reference cannot match more than 1 resource"), ref, ref.getIndex().id());
             return;
         }
         R file = ref.getCodec().deserialize(resource.getFirst());
@@ -146,11 +140,13 @@ public final class Mixson {
     }
 
 
-    private static <T> void handleEvent(EventEntry<T> eventEntry, AbstractHook<?> hook, Consumer<UUID> cancelCallback, Consumer<AbstractEntry> eventRegistrationCallback) {
+    private static <T, R> void handleEvent(EventEntry<T> eventEntry, MixsonRuntime<R> runtime) {
         MixsonEvent<T> event = eventEntry.event();
-        List<Map.Entry<Index, Resource>> entries = hook.getMatching(event.getWrappedPredicate());
-        if(entries.isEmpty() && eventEntry.event().assertive()) throw new MixsonError("assertion on event '%s' failed", event.eventName());
+        List<Map.Entry<Index, Resource>> entries = runtime.getHook().getMatching(event.getWrappedPredicate());
+        if(entries.isEmpty() && eventEntry.event().assertive()) throw new MixsonException("assertion on event '%s' failed", event.eventName());
         if(entries.isEmpty()) return;
+        if(event.lifetime() == Lifetime.ONCE)
+            remove(event.uuid());
         entries.sort(Comparator
                 .comparing((Map.Entry<Index, Resource> o) -> o.getKey().id())
                 .thenComparingInt(o -> o.getKey().ordinal())
@@ -158,95 +154,67 @@ public final class Mixson {
         Set<Index> markedForDeletion = new HashSet<>();
         logExtra("begun processing event '{}'", event.eventName());
         long fileStartTime = System.nanoTime();
-        for(Map.Entry<Index, Resource> entry : entries) {
-            if(getDebugFlag(DebugOption.PREVENT_CATCHING))
-                try {
-                    processEvent(eventEntry, hook, cancelCallback, eventRegistrationCallback, entry, markedForDeletion, event);
-                } catch (IOException e) {
-                    runtimeError(e, event, entry.getKey().id());
-                }
-            else {
-                try {
-                    processEvent(eventEntry, hook, cancelCallback, eventRegistrationCallback, entry, markedForDeletion, event);
-                } catch (Exception e) {
-                    runtimeError(e, event, entry.getKey().id());
-                }
+        for(Map.Entry<Index, Resource> resourceEntry : entries) {
+            try {
+                processEvent(eventEntry, runtime, resourceEntry, markedForDeletion);
+            } catch (IOException e) {
+                runtime.error(e, event, resourceEntry.getKey().id());
             }
-
         }
         String ext = eventEntry.event().codec().extensionAndDot();
         for(Index deletionIndex : markedForDeletion.stream().sorted().toList())
-            hook.delete(deletionIndex, ext);
+            runtime.getHook().delete(deletionIndex, ext);
         logExtra("successfully finished processing event '{}' in {}", event.eventName(), timestamp(fileStartTime));
     }
 
-    private static <T> void processEvent(EventEntry<T> eventEntry, AbstractHook<?> hook, Consumer<UUID> cancelCallback, Consumer<AbstractEntry> eventRegistrationCallback, Map.Entry<Index, Resource> entry, Set<Index> markedForDeletion, MixsonEvent<T> event) throws IOException {
-        T file = deserializeFile(event.codec(), entry.getValue(), error -> runtimeError(error, event, entry.getKey().id())).orElse(null);
-        HashMap<Index, List<Mutable<T>>> capturedFiles = new HashMap<>();
-        EventContext<T> context = new EventContext<>(file, entry.getKey(), eventEntry, markedForDeletion.contains(entry.getKey()), index -> {
-            Index suffixedIndex = index.withSuffixedId(event.codec().extensionAndDot());
-            if(overlappingIndices(capturedFiles.keySet(), suffixedIndex)) {
-                runtimeError(new MixsonError("cannot capture same file twice"), event, entry.getKey().id());
-                return List.of();
-            }
-            Optional<List<Resource>> maybeResourceList = hook.captureFiles(suffixedIndex);
-            if(maybeResourceList.isEmpty()) return List.of();
-            List<Resource> resourceList = maybeResourceList.get();
-            List<Mutable<T>> resultList = new ArrayList<>();
-            for(Resource r : resourceList) {
-                T deserializedFile = deserializeFile(event.codec(), r, error -> runtimeError(error, event, entry.getKey().id())).orElse(null);
-                resultList.add(new MutableObject<>(deserializedFile));
-            }
-            capturedFiles.put(suffixedIndex, List.copyOf(resultList));
-            return resultList;
-        });
-        logBasic("Running '{}' on resource '{}'", event.eventName(), entry.getKey().id());
+    private static <T, R> void processEvent(EventEntry<T> eventEntry, MixsonRuntime<R> runtime, Map.Entry<Index, Resource> resourceEntry, Set<Index> markedForDeletion) throws IOException {
+        MixsonEvent<T> event = eventEntry.event();
+        AbstractHook<R> hook = runtime.getHook();
+        T file = deserializeFile(event.codec(), resourceEntry.getValue(), error -> runtime.error(error, event, resourceEntry.getKey().id())).orElse(null);
+        EventContext<T> context = new EventContext<>(file, resourceEntry.getKey(), eventEntry, runtime, resourceEntry, markedForDeletion.contains(resourceEntry.getKey()));
+        if(getDebugFlag(DebugOption.EXPORT_UNPATCHED_FILE))
+            exportDebugFile(event.codec(), file, event.eventName(), resourceEntry.getKey().id().toString(), event.codec().extensionAndDot(), false);
+        logBasic("Running '{}' on resource '{}'", event.eventName(), resourceEntry.getKey().id());
         long fileStartTime = System.nanoTime();
         event.event().runEvent(context);
-        logExtra("Finished running '{}' on resource '{}' in {}", event.eventName(), entry.getKey().id(), timestamp(fileStartTime));
+        logExtra("Finished running '{}' on resource '{}' in {}", event.eventName(), resourceEntry.getKey().id(), timestamp(fileStartTime));
         T debugExport = context.getDebugExport();
-        if(debugExport != null)
-            exportDebugFile(event.codec(), debugExport, event.eventName(), entry.getKey().id().toString(), event.codec().extensionAndDot());
-        if(context.isMarkedForDeletion()) markedForDeletion.add(entry.getKey());
-        else markedForDeletion.remove(entry.getKey());
+        if(debugExport != null && getDebugFlag(DebugOption.EXPORT_PATCHED_FILE))
+            exportDebugFile(event.codec(), debugExport, event.eventName(), resourceEntry.getKey().id().toString(), event.codec().extensionAndDot(), true);
+        if(context.isMarkedForDeletion()) markedForDeletion.add(resourceEntry.getKey());
+        else markedForDeletion.remove(resourceEntry.getKey());
         for(UUID cancelledFuture : context.getCancelledFutures())
-            cancelCallback.accept(cancelledFuture);
+            runtime.cancelEvent(cancelledFuture);
 
-        List<AbstractEntry> appendable = new ArrayList<>();
-        for(QuadRecord<AtomicReference<UUID>, MixsonEventBuilder<T>, Integer, Boolean> holder : context.getCreatedEvents()) {
-            MixsonEvent<T> builtEvent = holder.second().build(holder.third(), Optional.of(holder.first()));
-            if(holder.fourth())
-                finalizeEventRegistration(holder.third(), builtEvent);
-            appendable.add(new EventEntry<>(holder.third(), builtEvent));
-        }
-        appendable.forEach(eventRegistrationCallback);
-
-        hook.insert(entry.getKey(), event.codec().serialize(entry.getValue(), context.getFile()), event.codec().extensionAndDot(), true);
-        for(Map.Entry<Index, List<Mutable<T>>> captureEntry : capturedFiles.entrySet()) {
-            List<Resource> resources = new ArrayList<>(captureEntry.getValue().size());
-            for(Mutable<T> resource : captureEntry.getValue()) {
-                T resourceFile = resource.getValue();
-                if(resourceFile == null) {
-                    runtimeError(new MixsonError("captured file with index {} cannot be null", captureEntry.getKey()), event, captureEntry.getKey().id());
-                }
-                resources.add(event.codec().serialize(entry.getValue(), resourceFile));
+        for(UUID uuid : context.getPulledFutures()) {
+            MixsonEvent<?> pulledDeferred = deferredEvents.remove(uuid);
+            if(pulledDeferred != null) {
+                runtime.insertEntry(new EventEntry<>(pulledDeferred.priority(), pulledDeferred));
+                continue;
             }
-            hook.insert(captureEntry.getKey(), resources, event.codec().extensionAndDot(), true);
+            MixsonEvent<?> pulledEvent = events.get(uuid);
+            if(pulledEvent != null) {
+                runtime.insertEntry(new EventEntry<>(pulledEvent.priority(), pulledEvent));
+                continue;
+            }
+            ResourceReference<?> pulledRef = references.get(uuid);
+            if(pulledRef != null) {
+                runtime.insertEntry(new ReferenceEntry<>(pulledRef.getPriority(), pulledRef));
+                continue;
+            }
+            throw new IllegalArgumentException("failed to locate event or reference with uuid of "+uuid);
         }
+
+        hook.insert(resourceEntry.getKey(), event.codec().serialize(resourceEntry.getValue(), context.getFile()), event.codec().extensionAndDot(), true);
         for(Map.Entry<Index, T> createdResource : context.getCreatedResources().entrySet())
-            hook.insert(createdResource.getKey(), event.codec().serialize(entry.getValue(), createdResource.getValue()), event.codec().extensionAndDot(),false);
+            hook.insert(createdResource.getKey(), event.codec().serialize(resourceEntry.getValue(), createdResource.getValue()), event.codec().extensionAndDot(), false);
     }
 
     // ERRORS
 
     static void registrationError(Exception e, ErrorMessageProvider errorMessageProvider) {
-        if(errorMessageProvider.getErrorPolicy() != ErrorPolciy.THROW) LOGGER.error(errorMessageProvider.getRegistrationErrorMessage(), e);
-        else throw new MixsonError(errorMessageProvider.getRegistrationErrorMessage()+e);
-    }
-
-    static void runtimeError(Exception e, ErrorMessageProvider errorMessageProvider, ResourceLocation resourceId) {
-        if(errorMessageProvider.getErrorPolicy() != ErrorPolciy.THROW) LOGGER.error(errorMessageProvider.getRuntimeErrorMessage(resourceId), e);
-        else throw new MixsonError(errorMessageProvider.getRuntimeErrorMessage(resourceId)+e);
+        if(errorMessageProvider.getErrorPolicy() != ErrorPolicy.THROW) LOGGER.error(errorMessageProvider.getRegistrationErrorMessage(), e);
+        else throw new MixsonException(errorMessageProvider.getRegistrationErrorMessage(), e);
     }
 
     // MISC. PUBLICS
@@ -269,10 +237,8 @@ public final class Mixson {
 
     // DEBUGGING STUFF
 
-    public static void setDebugOption(DebugOption option, boolean state, boolean overwrite) {
-        if(overwrite)
-            Mixson.debugOptionFlags &= ~option.getMask();
-        else Mixson.debugOptionFlags |= option.getMask();
+    public static void enableDebugOption(DebugOption option) {
+        Mixson.debugOptionFlags |= option.getMask();
     }
 
     private static boolean getDebugFlag(DebugOption option) {
@@ -287,9 +253,12 @@ public final class Mixson {
         if(getDebugFlag(DebugOption.EXTRA_LOGGING)) LOGGER.info(action, args);
     }
 
-    private static <T> void exportDebugFile(MixsonCodec<T> codec, T resource, String eventName, String resourceId, String extension) {
-        if(!getDebugFlag(DebugOption.EXPORT_PATCHED_FILE)) return;
-        Path dir = FabricLoader.getInstance().getGameDir().resolve(".mixson").resolve(identifierToPathString(resourceId, extension));
+    private static <T> void exportDebugFile(MixsonCodec<T> codec, T resource, String eventName, String resourceId, String extension, boolean patched) {
+        Path rawDir = FabricLoader.getInstance().getGameDir().resolve(".mixson");
+        Path patchDir;
+        if(patched) patchDir = rawDir.resolve("patched");
+        else patchDir = rawDir.resolve("unpatched");
+        Path dir = patchDir.resolve(identifierToPathString(resourceId, extension));
         try {
             Files.createDirectories(dir);
             FileOutputStream fos = new FileOutputStream(dir.resolve(stringToUsablePath(eventName)+extension).toFile());
@@ -298,17 +267,13 @@ public final class Mixson {
         } catch (IOException e) {
             LOGGER.error("failed to export debug file", e);
         }
-
     }
 
     static {
-
         try {
             FileUtils.deleteDirectory(FabricLoader.getInstance().getGameDir().resolve(".mixson").toFile());
         } catch (Exception e) {
             LOGGER.error("failed to delete .mixson debug directory", e);
         }
-
     }
-
 }
