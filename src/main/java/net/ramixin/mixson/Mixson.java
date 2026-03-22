@@ -185,7 +185,7 @@ public final class Mixson {
         else markedForDeletion.remove(resourceEntry.getKey());
         for(UUID cancelledFuture : context.getCancelledFutures())
             runtime.cancelEvent(cancelledFuture);
-
+        context.cleanupCapturedFiles();
         for(UUID uuid : context.getPulledFutures()) {
             MixsonEvent<?> pulledDeferred = deferredEvents.remove(uuid);
             if(pulledDeferred != null) {
