@@ -22,7 +22,7 @@ public class RegistrationTests {
                 (_) -> false,
                 _ -> {}
         );
-        assert Mixson.has(eventId) : "Event was not registered";
+        assert Mixson.hasEvent(eventId) : "Event was not registered";
     }
 
     @Test
@@ -32,7 +32,7 @@ public class RegistrationTests {
                 new Index("test:test"),
                 "testReferenceRegistration"
         );
-        assert Mixson.has(ref.getUuid()) : "Reference was not registered";
+        assert Mixson.hasReference(ref.getUuid()) : "Reference was not registered";
     }
 
 
