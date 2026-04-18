@@ -24,8 +24,11 @@ Check the relevant Mixson loader repositories for more information:
 - [Quilt](https://github.com/Ramixin/Mixson-Quilt)
 - [NeoForge](https://github.com/Ramixin/Mixson-NeoForge)
 
-For building, use `.\gradlew.bat :[version]:build`
-- versions: `26.1.2-fabric`/`1.21.1-fabric`/`1.20.1-fabric`
+### Stonecutter
+- For building, use `.\gradlew.bat :[version]:build`
+- For version switching, use `.\gradlew.bat "Set active project to [version]"`
+  - Versions: `26.1.2-fabric`/`1.21.1-fabric`/`1.20.1-fabric`
+- For resetting version state to default, use `.\gradlew.bat "Reset active project"`
 
 ## License
 This project is under an MIT
