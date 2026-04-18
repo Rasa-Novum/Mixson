@@ -17,7 +17,7 @@ public final class Index implements Comparable<Index> {
     }
 
     public Index(String stringId, int ordinal) {
-        this(Identifier.parse(stringId), ordinal);
+        this(VersionUtils.id(stringId), ordinal);
     }
 
     public Index(Identifier id) {
@@ -25,19 +25,19 @@ public final class Index implements Comparable<Index> {
     }
 
     public Index(String stringId) {
-        this(Identifier.parse(stringId), 0);
+        this(VersionUtils.id(stringId), 0);
     }
 
     public Index withSuffixedId(String suffix) {
-        return new Index(id.withSuffix(suffix), ordinal);
+        return new Index(VersionUtils.withSuffix(id, suffix), ordinal);
     }
 
     @Override
     public String toString() {
         return "Index{namespace=" +
-                id.getNamespace() +
+                VersionUtils.namespace(id) +
                 ", path=" +
-                id.getPath() +
+                VersionUtils.path(id) +
                 ", ordinal=" +
                 ordinal +
                 '}';
@@ -67,7 +67,7 @@ public final class Index implements Comparable<Index> {
     }
 
     public Index copy() {
-        return new Index(Identifier.parse(id.toString()), ordinal);
+        return new Index(VersionUtils.id(id.toString()), ordinal);
     }
 
     public Identifier id() {

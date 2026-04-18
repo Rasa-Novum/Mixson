@@ -57,7 +57,7 @@ public class DeletionTests {
         List<Resource> resourceList = generateRandomResourceList(object, net);
         int originalSize = resourceList.size();
 
-        Index index = new Index("test:list_deletion", (int) net.get());
+        Index index = new Index("test:list_deletion", (int) net.getValue());
         Identifier idExt = index.id().withSuffix(".json");
 
         Mixson.registerEvent(
@@ -81,7 +81,7 @@ public class DeletionTests {
         for (int i = 0; i < resultList.size(); i++) {
             Resource resource = resultList.get(i);
             JsonElement element = MixsonCodecs.JSON_ELEMENT.deserialize(resource);
-            assert !object.equals(element) : String.format("Wrong index was deleted. %s instead of %s", i, net.get());
+            assert !object.equals(element) : String.format("Wrong index was deleted. %s instead of %s", i, net.getValue());
         }
     }
 
@@ -92,7 +92,7 @@ public class DeletionTests {
         List<Resource> resourceList = generateRandomResourceList(object, net);
         int originalSize = resourceList.size();
 
-        Index index = new Index("test:namespace_deletion", (int) net.get());
+        Index index = new Index("test:namespace_deletion", (int) net.getValue());
         Identifier idExt = index.id().withSuffix(".json");
 
         Mixson.registerEvent(
@@ -111,7 +111,7 @@ public class DeletionTests {
         for (int i = 0; i < resourceList.size(); i++) {
             Resource resource = resourceList.get(i);
             JsonElement element = MixsonCodecs.JSON_ELEMENT.deserialize(resource);
-            assert !object.equals(element) : String.format("Wrong index was deleted. %s instead of %s", i, net.get());
+            assert !object.equals(element) : String.format("Wrong index was deleted. %s instead of %s", i, net.getValue());
         }
     }
 

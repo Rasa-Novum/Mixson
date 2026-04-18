@@ -40,7 +40,7 @@ public class DeferredTests {
                 ErrorPolicy.THROW,
                 "eventToBePulled",
                 otherIndex::idEquals,
-                _ -> pulled.set(true)
+                ignored -> pulled.set(true)
         );
         log.info("Registered event with id {}", eventId);
 
@@ -99,7 +99,7 @@ public class DeferredTests {
                             ErrorPolicy.THROW,
                             "eventToBePulled",
                             otherIndex::idEquals,
-                            _ -> pulled.set(true)
+                            ignored -> pulled.set(true)
                     );
 
                     log.info("pulling concurrent event with id {}", eventId);

@@ -25,13 +25,13 @@ public class MixsonRuntime<T> {
         SortedMap<Integer, List<ResourceReference<?>>> references = referenceRegistry.captureSnapshot();
         for(int priority : references.keySet()) {
             List<ResourceReference<?>> builtReference = references.get(priority);
-            List<AbstractEntry> entries = combinedEntries.computeIfAbsent(priority, _ -> new ArrayList<>());
+            List<AbstractEntry> entries = combinedEntries.computeIfAbsent(priority, ignored -> new ArrayList<>());
             builtReference.stream().map((reference) -> new ReferenceEntry<>(priority, reference)).forEach(entries::add);
         }
         SortedMap<Integer, List<MixsonEvent<?>>> events = eventRegistry.captureSnapshot();
         for(int priority : events.keySet()) {
             List<MixsonEvent<?>> builtEvents = events.get(priority);
-            List<AbstractEntry> entries = combinedEntries.computeIfAbsent(priority, _ -> new ArrayList<>());
+            List<AbstractEntry> entries = combinedEntries.computeIfAbsent(priority, ignored -> new ArrayList<>());
             builtEvents.stream().map((event) -> new EventEntry<>(priority, event)).forEach(entries::add);
         }
         combinedEntries.sequencedValues().forEach(queuedEvents::addAll);

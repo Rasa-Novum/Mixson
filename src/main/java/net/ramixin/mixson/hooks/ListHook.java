@@ -4,6 +4,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.ramixin.mixson.util.Index;
 import net.ramixin.mixson.util.MixsonUtil;
+import net.ramixin.mixson.util.VersionUtils;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ArrayList;
@@ -21,7 +22,7 @@ public class ListHook extends AbstractHook<Map<Identifier, List<Resource>>> {
 
     @Override
     public Optional<List<Resource>> captureFiles(Index index, String fileExt) {
-        List<Resource> list = this.attachedResources.get(index.id().withSuffix(fileExt));
+        List<Resource> list = this.attachedResources.get(VersionUtils.withSuffix(index.id(), fileExt));
         if(list == null) return Optional.empty();
         if(index.ordinal() == -1) return Optional.of(list);
         return Optional.of(List.of(list.get(index.ordinal())));
@@ -67,12 +68,12 @@ public class ListHook extends AbstractHook<Map<Identifier, List<Resource>>> {
 
     @Override
     public void delete(Index index, String fileExt) {
-        List<Resource> immutableList = this.attachedResources.get(index.id().withSuffix(fileExt));
+        List<Resource> immutableList = this.attachedResources.get(VersionUtils.withSuffix(index.id(), fileExt));
         if(immutableList == null) return;
         List<Resource> mutableList = new ArrayList<>(immutableList);
         if(index.ordinal() >= mutableList.size())
             throw new IllegalStateException("Cannot delete resource: Resource with index " + index + " does not exists");
         mutableList.remove(index.ordinal());
-        this.attachedResources.put(index.id().withSuffix(fileExt), mutableList);
+        this.attachedResources.put(VersionUtils.withSuffix(index.id(), fileExt), mutableList);
     }
 }

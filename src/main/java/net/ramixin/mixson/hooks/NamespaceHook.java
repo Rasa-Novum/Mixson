@@ -4,6 +4,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.ramixin.mixson.util.Index;
 import net.ramixin.mixson.util.MixsonUtil;
+import net.ramixin.mixson.util.VersionUtils;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ArrayList;
@@ -15,16 +16,16 @@ import java.util.function.Predicate;
 @ApiStatus.Internal
 public class NamespaceHook extends AbstractHook<List<Resource>> {
 
-    private final Identifier Identifier;
+    private final Identifier resourceId;
 
-    public NamespaceHook(List<Resource> attachedResources, Identifier Identifier) {
+    public NamespaceHook(List<Resource> attachedResources, Identifier resourceId) {
         super(attachedResources);
-        this.Identifier = Identifier;
+        this.resourceId = resourceId;
     }
 
     @Override
     public Optional<List<Resource>> captureFiles(Index index, String fileExt) {
-        if(!index.id().withSuffix(fileExt).equals(this.Identifier))
+        if(!VersionUtils.withSuffix(index.id(), fileExt).equals(this.resourceId))
             return Optional.empty();
         if(index.ordinal() == -1) return Optional.of(this.attachedResources);
         return Optional.of(List.of(this.attachedResources.get(index.ordinal())));
@@ -33,9 +34,9 @@ public class NamespaceHook extends AbstractHook<List<Resource>> {
     @Override
     public List<Map.Entry<Index, Resource>> getMatching(Predicate<Index> predicate) {
         List<Map.Entry<Index, Resource>> result = new ArrayList<>();
-        Identifier withoutExtension = MixsonUtil.removeExtension(this.Identifier);
+        Identifier withoutExtension = MixsonUtil.removeExtension(this.resourceId);
         for(int i = 0; i < this.attachedResources.size(); i++) {
-            if(!predicate.test(new Index(this.Identifier, i))) continue;
+            if(!predicate.test(new Index(this.resourceId, i))) continue;
             result.add(Map.entry(new Index(withoutExtension, i), this.attachedResources.get(i)));
         }
         return result;
@@ -43,8 +44,8 @@ public class NamespaceHook extends AbstractHook<List<Resource>> {
 
     @Override
     public void insert(Index index, List<Resource> resources, String fileExt, boolean overwrite) {
-        if(!index.id().withSuffix(fileExt).equals(this.Identifier))
-            throw new IllegalArgumentException("Namespace Hook cannot process index " + index + " with id: " + this.Identifier);
+        if(!VersionUtils.withSuffix(index.id(), fileExt).equals(this.resourceId))
+            throw new IllegalArgumentException("Namespace Hook cannot process index " + index + " with id: " + this.resourceId);
         if(index.ordinal() == -1) {
             if(!overwrite)
                 throw new IllegalStateException("Cannot set resource: missing overwrite permission");
@@ -65,8 +66,8 @@ public class NamespaceHook extends AbstractHook<List<Resource>> {
 
     @Override
     public void delete(Index index, String fileExt) {
-        if(!index.id().withSuffix(fileExt).equals(this.Identifier))
-            throw new IllegalArgumentException("Namespace Hook cannot process index " + index + "with id: " + this.Identifier);
+        if(!VersionUtils.withSuffix(index.id(), fileExt).equals(this.resourceId))
+            throw new IllegalArgumentException("Namespace Hook cannot process index " + index + "with id: " + this.resourceId);
         if(index.ordinal() >= this.attachedResources.size())
             throw new IllegalStateException("Cannot delete resource: Resource with index " + index + " does not exists");
         if(index.ordinal() == -1)

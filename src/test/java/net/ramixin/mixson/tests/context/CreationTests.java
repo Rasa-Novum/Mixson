@@ -58,14 +58,14 @@ public class CreationTests {
         List<Resource> resourceList = generateRandomResourceList(object, net);
         int originalSize = resourceList.size();
 
-        Index index = new Index("test:list_creation", (int) net.get());
+        Index index = new Index("test:list_creation", (int) net.getValue());
         Identifier idWithExt = index.id().withSuffix(".json");
 
         Index IndexA = new Index("test:list_goal");
         Identifier IdAExt = IndexA.id().withSuffix(".json");
         JsonObject objectA = generateRandomJsonObject();
 
-        int randomOrdinal = randomListOrdinal(resourceList.size(), (int) net.get());
+        int randomOrdinal = randomListOrdinal(resourceList.size(), (int) net.getValue());
         Index IndexB = new Index("test:list_creation", randomOrdinal);
         Identifier IdBExt = IndexB.id().withSuffix(".json");
         JsonObject objectB = generateRandomJsonObject();
@@ -107,10 +107,10 @@ public class CreationTests {
         List<Resource> resourceList = generateRandomResourceList(object, net);
         int originalSize = resourceList.size();
 
-        Index index = new Index("test:namespace_creation", (int) net.get());
+        Index index = new Index("test:namespace_creation", (int) net.getValue());
         Identifier idWithExt = index.id().withSuffix(".json");
 
-        int goalOrdinal = randomListOrdinal(resourceList.size(), (int) net.get());
+        int goalOrdinal = randomListOrdinal(resourceList.size(), (int) net.getValue());
         Index goalIndex = new Index(index.id(), goalOrdinal);
         JsonObject goalObject = generateRandomJsonObject();
 

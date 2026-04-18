@@ -63,7 +63,7 @@ public class MutabilityTests {
 
         int originalSize = resourceList.size();
 
-        Index index = new Index("test:list_mutability", (int) net.get());
+        Index index = new Index("test:list_mutability", (int) net.getValue());
         Identifier idWithExt = index.id().withSuffix(".json");
 
         JsonObject goalObject = object.deepCopy();
@@ -89,7 +89,7 @@ public class MutabilityTests {
         assert resourceMap.containsKey(idWithExt);
         List<Resource> resource = resourceMap.get(idWithExt);
         assert resource.size() == originalSize : "Wrong number of resources";
-        JsonElement element = MixsonCodecs.JSON_ELEMENT.deserialize(resource.get((int) net.get()));
+        JsonElement element = MixsonCodecs.JSON_ELEMENT.deserialize(resource.get((int) net.getValue()));
         System.out.println(element);
         assert element.equals(goalObject) : "Mutability failed";
     }
@@ -102,7 +102,7 @@ public class MutabilityTests {
 
         int originalSize = resourceList.size();
 
-        Index index = new Index("test:namespace_mutability", (int) net.get());
+        Index index = new Index("test:namespace_mutability", (int) net.getValue());
         Identifier idWithExt = index.id().withSuffix(".json");
 
         JsonObject goalObject = object.deepCopy();
@@ -124,7 +124,7 @@ public class MutabilityTests {
         Mixson.processHook(new NamespaceHook(resourceList, idWithExt));
 
         assert resourceList.size() == originalSize : "Wrong number of resources";
-        JsonElement element = MixsonCodecs.JSON_ELEMENT.deserialize(resourceList.get((int) net.get()));
+        JsonElement element = MixsonCodecs.JSON_ELEMENT.deserialize(resourceList.get((int) net.getValue()));
         assert element.equals(goalObject) : "Mutability failed";
     }
 

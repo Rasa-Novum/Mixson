@@ -35,7 +35,7 @@ public class ContextTests {
                 ErrorPolicy.THROW,
                 "eventToBeCancelled",
                 otherIndex::idEquals,
-                _ -> cancelled.set(false)
+                ignored -> cancelled.set(false)
         );
 
         Mixson.registerEvent(

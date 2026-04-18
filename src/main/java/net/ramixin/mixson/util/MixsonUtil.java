@@ -13,8 +13,8 @@ import java.util.function.Consumer;
 public interface MixsonUtil {
 
     static String identifierToPathString(String resourceId, String extension) {
-        Identifier usable = Identifier.parse(resourceId);
-        return usable.getNamespace() + '~' + usable.getPath().replaceFirst(String.format("\\%s", extension), "").replace("/", "-");
+        Identifier usable = VersionUtils.id(resourceId);
+        return VersionUtils.namespace(usable) + '~' + VersionUtils.path(usable).replaceFirst(String.format("\\%s", extension), "").replace("/", "-");
     }
 
     static String stringToUsablePath(String string) {
@@ -22,8 +22,8 @@ public interface MixsonUtil {
     }
 
     static Identifier removeExtension(Identifier id) {
-        String stringId = id.getPath();
-        for(int i = stringId.length()-1; i > 0; i--) if(stringId.charAt(i) == '.') return Identifier.fromNamespaceAndPath(id.getNamespace(), stringId.substring(0, i));
+        String stringId = VersionUtils.path(id);
+        for(int i = stringId.length()-1; i > 0; i--) if(stringId.charAt(i) == '.') return VersionUtils.id(VersionUtils.namespace(id), stringId.substring(0, i));
         return id;
     }
 

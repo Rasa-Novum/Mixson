@@ -4,6 +4,7 @@ import net.minecraft.resources.Identifier;
 import net.ramixin.mixson.enums.ErrorPolicy;
 import net.ramixin.mixson.enums.Lifetime;
 import net.ramixin.mixson.util.Index;
+import net.ramixin.mixson.util.VersionUtils;
 import net.ramixin.mixson.util.functions.Event;
 import net.ramixin.mixson.util.interfaces.ErrorMessageProvider;
 import net.ramixin.mixson.util.interfaces.MixsonCodec;
@@ -38,9 +39,9 @@ public record MixsonEvent<T>(UUID uuid, MixsonCodec<T> codec, int priority, Life
         return (index) -> {
             String ext = codec.extensionAndDot();
             Identifier id = index.id();
-            if(!id.getPath().endsWith(ext))
+            if(!VersionUtils.path(id).endsWith(ext))
                 return false;
-            Identifier trimmedLocation = Identifier.fromNamespaceAndPath(id.getNamespace(), id.getPath().substring(0, id.getPath().length() - ext.length()));
+            Identifier trimmedLocation = VersionUtils.id(VersionUtils.namespace(id), VersionUtils.path(id).substring(0, VersionUtils.path(id).length() - ext.length()));
             return resourcePredicate.test(new Index(trimmedLocation, index.ordinal()));
         };
     }

@@ -48,9 +48,9 @@ public class CaptureTests {
                     List<Mutable<JsonElement>> captures = context.captureFiles(otherIndex);
                     assert captures.size() == 1 : "Incorrect number of files captured. Expected 1, but got "+captures.size();
                     Mutable<JsonElement> capture = captures.getFirst();
-                    log.info("captured file: {}", capture.get());
+                    log.info("captured file: {}", capture.getValue());
                     log.info("expected file: {}", goalObject);
-                    assert capture.get().equals(goalObject) : "Captured file was not serialized correctly";
+                    assert capture.getValue().equals(goalObject) : "Captured file was not serialized correctly";
 
                     Throwable exception = Assertions.assertThrows(MixsonException.class, () -> context.captureFiles(otherIndex)).getCause();
                     log.error("e: ", exception);
@@ -72,7 +72,7 @@ public class CaptureTests {
         JsonObject goalObject = generateRandomJsonObject();
         MutableInt net = new MutableInt();
         List<Resource> resourceList = generateRandomResourceList(goalObject, net);
-        Index otherIndex = new Index("test:list_captured", (int) net.get());
+        Index otherIndex = new Index("test:list_captured", (int) net.getValue());
         Identifier otherIdWithExt = otherIndex.id().withSuffix(".json");
 
 
@@ -86,13 +86,13 @@ public class CaptureTests {
                     List<Mutable<JsonElement>> captures = context.captureFiles(otherIndex);
                     assert captures.size() == 1 : "Incorrect number of files captured. Expected 1, but got "+captures.size();
                     Mutable<JsonElement> capture = captures.getFirst();
-                    assert capture.get().equals(goalObject) : "Captured file was not serialized correctly";
+                    assert capture.getValue().equals(goalObject) : "Captured file was not serialized correctly";
 
                     Throwable exception = Assertions.assertThrows(MixsonException.class, () -> context.captureFiles(otherIndex)).getCause();
                     log.error("e: ", exception);
                     assert exception.getMessage().contains("cannot capture same file twice") : "Caught wrong exception";
 
-                    Index newIndex = new Index(otherIndex.id(), randomListOrdinal(resourceList.size(), (int) net.get()));
+                    Index newIndex = new Index(otherIndex.id(), randomListOrdinal(resourceList.size(), (int) net.getValue()));
                     context.captureFiles(newIndex);
                 }
         );
@@ -111,7 +111,7 @@ public class CaptureTests {
         JsonObject goalObject = generateRandomJsonObject();
         MutableInt net = new MutableInt();
         List<Resource> resourceList = generateRandomResourceList(goalObject, net);
-        Index otherIndex = new Index("test:namespace_capturing", (int) net.get());
+        Index otherIndex = new Index("test:namespace_capturing", (int) net.getValue());
 
         Mixson.registerEvent(
                 Mixson.DEFAULT_PRIORITY,
@@ -123,12 +123,12 @@ public class CaptureTests {
                     List<Mutable<JsonElement>> captures = context.captureFiles(otherIndex);
                     assert captures.size() == 1 : "Incorrect number of files captured. Expected 1, but got "+captures.size();
                     Mutable<JsonElement> capture = captures.getFirst();
-                    assert capture.get().equals(goalObject) : "Captured file was not serialized correctly";
+                    assert capture.getValue().equals(goalObject) : "Captured file was not serialized correctly";
 
                     Throwable exception = Assertions.assertThrows(MixsonException.class, () -> context.captureFiles(otherIndex)).getCause();
                     assert exception.getMessage().contains("cannot capture same file twice") : "Caught wrong exception: "+ exception;
 
-                    Index newIndex = new Index(otherIndex.id(), randomListOrdinal(resourceList.size(), (int) net.get()));
+                    Index newIndex = new Index(otherIndex.id(), randomListOrdinal(resourceList.size(), (int) net.getValue()));
                     context.captureFiles(newIndex);
                 }
         );

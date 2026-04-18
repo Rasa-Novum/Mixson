@@ -37,7 +37,7 @@ public class EventTests {
                 ErrorPolicy.THROW,
                 "Standard - eventThatShouldRun",
                 index::equals,
-                _ -> correctRan.increment()
+                ignored -> correctRan.increment()
         );
         Mixson.registerEvent(
                 Mixson.DEFAULT_PRIORITY,
@@ -45,14 +45,14 @@ public class EventTests {
                 ErrorPolicy.THROW,
                 "Standard - eventThatShouldNotRun",
                 badIndex::equals,
-                _ -> wrongRan.increment()
+                ignored -> wrongRan.increment()
         );
         Map<Identifier, Resource> resourceMap = new HashMap<>(){{
             put(indexExt, createDummyResource(generateRandomJsonObject()));
         }};
         Mixson.processHook(new StandardHook(resourceMap));
-        assert (int) correctRan.get() == 1 : "Event was not run 1 time, but " + correctRan.get() + " times";
-        assert (int) wrongRan.get() == 0 : "Wrong event was ran " + wrongRan.get() + " time(s)";
+        assert (int) correctRan.getValue() == 1 : "Event was not run 1 time, but " + correctRan.getValue() + " times";
+        assert (int) wrongRan.getValue() == 0 : "Wrong event was ran " + wrongRan.getValue() + " time(s)";
     }
 
     @Test
@@ -60,10 +60,10 @@ public class EventTests {
         MutableInt net = new MutableInt();
         List<Resource> resourceList = generateRandomResourceList(new JsonObject(), net);
 
-        Index index = new Index("test:list_run", (int) net.get());
+        Index index = new Index("test:list_run", (int) net.getValue());
         Identifier indexExt = index.id().withSuffix(".json");
 
-        Index badIndex = new Index("test:list_not_run", (int) net.get());
+        Index badIndex = new Index("test:list_not_run", (int) net.getValue());
 
 
         MutableInt correctRan = new MutableInt();
@@ -75,7 +75,7 @@ public class EventTests {
                 ErrorPolicy.THROW,
                 "List - eventThatShouldRun",
                 index::equals,
-                _ -> correctRan.increment()
+                ignored -> correctRan.increment()
         );
         Mixson.registerEvent(
                 Mixson.DEFAULT_PRIORITY,
@@ -83,14 +83,14 @@ public class EventTests {
                 ErrorPolicy.THROW,
                 "List - eventThatShouldNotRun",
                 badIndex::equals,
-                _ -> wrongRan.increment()
+                ignored -> wrongRan.increment()
         );
         Map<Identifier, List<Resource>> resourceMap = new HashMap<>(){{
             put(indexExt, resourceList);
         }};
         Mixson.processHook(new ListHook(resourceMap));
-        assert (int) correctRan.get() == 1 : "Event was not run 1 time, but " + correctRan.get() + " times";
-        assert (int) wrongRan.get() == 0 : "Wrong event was run " + wrongRan.get() + " time(s)";
+        assert (int) correctRan.getValue() == 1 : "Event was not run 1 time, but " + correctRan.getValue() + " times";
+        assert (int) wrongRan.getValue() == 0 : "Wrong event was run " + wrongRan.getValue() + " time(s)";
     }
 
     @Test
@@ -98,10 +98,10 @@ public class EventTests {
         MutableInt net = new MutableInt();
         List<Resource> resourceList = generateRandomResourceList(new JsonObject(), net);
 
-        Index index = new Index("test:namespace_run", (int) net.get());
+        Index index = new Index("test:namespace_run", (int) net.getValue());
         Identifier indexExt = index.id().withSuffix(".json");
 
-        Index badIndex = new Index("test:namespace_not_run", (int) net.get());
+        Index badIndex = new Index("test:namespace_not_run", (int) net.getValue());
 
         MutableInt correctRan = new MutableInt();
         MutableInt wrongRan = new MutableInt();
@@ -112,7 +112,7 @@ public class EventTests {
                 ErrorPolicy.THROW,
                 "Namespace - eventThatShouldRun",
                 index::equals,
-                _ -> correctRan.increment()
+                ignored -> correctRan.increment()
         );
         Mixson.registerEvent(
                 Mixson.DEFAULT_PRIORITY,
@@ -120,11 +120,11 @@ public class EventTests {
                 ErrorPolicy.THROW,
                 "eventThatShouldNotRun",
                 badIndex::equals,
-                _ -> wrongRan.increment()
+                ignored -> wrongRan.increment()
         );
         Mixson.processHook(new NamespaceHook(resourceList, indexExt));
-        assert (int) correctRan.get() == 1 : "Event was not run 1 time, but " + correctRan.get() + " times";
-        assert (int) wrongRan.get() == 0 : "Wrong event was ran " + wrongRan.get() + " time(s)";
+        assert (int) correctRan.getValue() == 1 : "Event was not run 1 time, but " + correctRan.getValue() + " times";
+        assert (int) wrongRan.getValue() == 0 : "Wrong event was ran " + wrongRan.getValue() + " time(s)";
     }
 
 

@@ -38,7 +38,7 @@ public class EventContext<T> {
     }
 
     public T getFile() {
-        return this.file.get();
+        return this.file.getValue();
     }
 
     public void setFile(T file) {
@@ -110,11 +110,11 @@ public class EventContext<T> {
 
     protected Optional<T> getDebugExport() {
         //noinspection OptionalAssignedToNull
-        if(this.debugExportObject.get() == null)
+        if(this.debugExportObject.getValue() == null)
             return Optional.empty();
-        if(this.debugExportObject.get().isEmpty())
-            return Optional.of(file.get());
-        return this.debugExportObject.get();
+        if(this.debugExportObject.getValue().isEmpty())
+            return Optional.of(file.getValue());
+        return this.debugExportObject.getValue();
     }
 
     protected boolean isMarkedForDeletion() {
@@ -137,7 +137,7 @@ public class EventContext<T> {
         for(Map.Entry<Index, List<Mutable<T>>> captureEntry : capturedFiles.entrySet()) {
             List<Resource> resources = new ArrayList<>(captureEntry.getValue().size());
             for(Mutable<T> resource : captureEntry.getValue()) {
-                T resourceFile = resource.get();
+                T resourceFile = resource.getValue();
                 if(resourceFile == null) {
                     runtime.error(new MixsonException("captured file with index {} cannot be null", captureEntry.getKey()), getEvent(), captureEntry.getKey().id());
                 }

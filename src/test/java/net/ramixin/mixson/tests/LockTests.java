@@ -34,8 +34,8 @@ public class LockTests {
               Lifetime.PERSISTENT,
               ErrorPolicy.THROW,
               "testMixsonLockingEvent",
-              _ -> true,
-              _ -> eventRan.set(true)
+              ignored -> true,
+              ignored -> eventRan.set(true)
         );
         Map<Identifier, Resource> resourceMap = new HashMap<>(){{
             put(idWithExt, createDummyResource(generateRandomJsonObject()));

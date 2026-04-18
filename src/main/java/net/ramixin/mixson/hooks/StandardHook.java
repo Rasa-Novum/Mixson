@@ -4,6 +4,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.ramixin.mixson.util.Index;
 import net.ramixin.mixson.util.MixsonUtil;
+import net.ramixin.mixson.util.VersionUtils;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -25,7 +26,7 @@ public class StandardHook extends AbstractHook<Map<Identifier, Resource>> {
     public Optional<List<Resource>> captureFiles(@NotNull Index index, String fileExt) {
         if(index.ordinal() > 0)
             return Optional.empty();
-        Resource resource = this.attachedResources.get(index.id().withSuffix(fileExt));
+        Resource resource = this.attachedResources.get(VersionUtils.withSuffix(index.id(), fileExt));
         if(resource == null) return Optional.empty();
         return Optional.of(List.of(resource));
     }
@@ -46,13 +47,13 @@ public class StandardHook extends AbstractHook<Map<Identifier, Resource>> {
             throw new IllegalArgumentException("Cannot insert empty resource list");
         if(index.ordinal()+1 > 1)
             throw new IllegalArgumentException("Resource type does not support ordinal indexing");
-        if(this.attachedResources.put(index.id().withSuffix(fileExt), resources.getFirst()) == null && overwrite)
+        if(this.attachedResources.put(VersionUtils.withSuffix(index.id(), fileExt), resources.getFirst()) == null && overwrite)
             throw new IllegalStateException("Cannot overwrite resource: Resource with id " + index + " does not exists");
     }
 
     @Override
     public void delete(Index index, String fileExt) {
         if(index.ordinal() < 1)
-            this.attachedResources.remove(index.id().withSuffix(fileExt));
+            this.attachedResources.remove(VersionUtils.withSuffix(index.id(), fileExt));
     }
 }

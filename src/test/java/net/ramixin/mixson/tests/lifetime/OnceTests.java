@@ -31,7 +31,7 @@ public class OnceTests {
                 ErrorPolicy.THROW,
                 "onceLifetimeEvent",
                 index::equals,
-                _ -> runCount.increment()
+                ignored -> runCount.increment()
         );
 
         Map<Identifier, Resource> resourceMap = new HashMap<>(){{
@@ -40,7 +40,7 @@ public class OnceTests {
         Mixson.processHook(new StandardHook(resourceMap));
         Mixson.processHook(new StandardHook(resourceMap));
 
-        assert (int) runCount.get() == 1 : "Event ran " + runCount.get() + " times";
+        assert (int) runCount.getValue() == 1 : "Event ran " + runCount.getValue() + " times";
     }
 
 }

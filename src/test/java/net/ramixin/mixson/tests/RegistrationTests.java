@@ -19,8 +19,8 @@ public class RegistrationTests {
                 Lifetime.PERSISTENT,
                 ErrorPolicy.THROW,
                 "testEventRegistration",
-                (_) -> false,
-                _ -> {}
+                ignored -> false,
+                ignored -> {}
         );
         assert Mixson.hasEvent(eventId) : "Event was not registered";
     }
