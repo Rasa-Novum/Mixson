@@ -1,43 +1,31 @@
 <p align="center">
 
-<img src="brand.png" alt="Mixson fabricated brand icon">
+<img src="brand.png" alt="Mixson brand icon">
 
 ### A simple lightweight library for modded Minecraft that allows for .json resource files to be modified, created, or deleted at runtime through an event-based system.
-
-</p>
-
+#### This is a fork of the original [Mixson](https://modrinth.com/mod/mixson) by [Ramixin](https://github.com/Ramixin). This version has been refactored for multi-loader (Fabric, Forge, NeoForge) and multi-version (26.1.2, 1.21.1, 1.20.1) support using [Stonecutter](https://stonecutter.kikugie.dev/) for use with [my mods](https://github.com/RasaNovum/Via_Romana/).
 
 ---
 
-## Downloading the Project
+## Support
+| MC Version | Fabric Version | Forge Version | NeoForge Version | Quilt Version |
+|:----------:|:--------------:|:-------------:|:----------------:|:-------------:|
+|   26.1.x   |   ✅`v2.1.0`    | ❌ Not Planned |      🚧 WIP      | ❌ Not Planned |
+|   1.21.1   |   ✅`v2.1.0`    | ❌ Not Planned |      🚧 WIP      | ❌ Not Planned |
+|   1.20.1   |   ✅`v2.1.0`    |    🚧 WIP     |  ❌ Not Planned   | ❌ Not Planned |
 
-This project can be installed through jitpack. First, add the following to the *first* `repositories` section in the `build.gradle`:
-```gradle
-repositories {
-    ...
-    mavenCentral()
-    maven { url 'https://jitpack.io' }
-    ...
-}
-```
-After that is added,
-the dependency can be added through inserting this into the `dependencies` section in the `build.gradle`:
-```gradle
-
-dependencies {
-    ...
-    modImplementation 'com.github.ramixin:mixson-fabric:TAG'
-    ...
-}
-```
-
-The `TAG` in the above section is where the specific version of Mixson will go.
-Either go to the wiki page below and copy the best version for your MC version, or
-go to https://jitpack.io/#ramixin/mixson-fabric.
+Note: I only plan on adding support for the versions I need for my mods, but adding additional version support should be fairly easy if anyone else would like to do so.
 
 ## Usage
-
 See the wiki for indepth usage instructions and examples: https://github.com/Ramixin/Mixson-Fabric/wiki
-## License
 
+Check the relevant Mixson loader repositories for more information:
+- [Fabric](https://github.com/Ramixin/Mixson-Fabric)
+- [Quilt](https://github.com/Ramixin/Mixson-Quilt)
+- [NeoForge](https://github.com/Ramixin/Mixson-NeoForge)
+
+For building, use `.\gradlew.bat :[version]:build`
+- versions: `26.1.2-fabric`/`1.21.1-fabric`/`1.20.1-fabric`
+
+## License
 This project is under an MIT
