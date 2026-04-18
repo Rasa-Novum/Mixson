@@ -98,13 +98,13 @@ public final class Mixson {
         MixsonRuntime<T> runtime = new MixsonRuntime<>(hook, eventRegistry, referenceRegistry, LOGGER::error);
         while(runtime.isRunning()) {
             AbstractEntry entry = runtime.pop();
-            switch(entry) {
-                case ReferenceEntry<?> referenceEntry -> handleReference(referenceEntry, runtime);
-                //noinspection rawtypes
-                case EventEntry eventEntry -> //noinspection unchecked
-                        handleEvent(eventEntry, runtime);
-                default -> throw new IllegalStateException("Unexpected value: " + entry);
-            }
+            if(entry instanceof ReferenceEntry<?> referenceEntry)
+                handleReference(referenceEntry, runtime);
+            //noinspection rawtypes
+            else if(entry instanceof EventEntry eventEntry)
+                //noinspection unchecked
+                handleEvent(eventEntry, runtime);
+            else throw new IllegalStateException("Unexpected value: " + entry);
         }
         lock.readLock().unlock();
         return hook.getAttachedResources();
@@ -128,7 +128,7 @@ public final class Mixson {
             runtime.error(new MixsonException("resource reference cannot match more than 1 resource"), ref, ref.getIndex().id());
             return;
         }
-        R file = ref.getCodec().deserialize(resource.getFirst());
+        R file = ref.getCodec().deserialize(resource.get(0));
         ref.fulfill(file);
     }
 

@@ -34,7 +34,7 @@ public class MixsonRuntime<T> {
             List<AbstractEntry> entries = combinedEntries.computeIfAbsent(priority, ignored -> new ArrayList<>());
             builtEvents.stream().map((event) -> new EventEntry<>(priority, event)).forEach(entries::add);
         }
-        combinedEntries.sequencedValues().forEach(queuedEvents::addAll);
+        combinedEntries.values().forEach(queuedEvents::addAll);
     }
 
     public AbstractHook<T> getHook() {
@@ -42,7 +42,7 @@ public class MixsonRuntime<T> {
     }
 
     protected AbstractEntry pop() {
-        return queuedEvents.removeFirst();
+        return queuedEvents.remove(0);
     }
 
     protected boolean isRunning() {

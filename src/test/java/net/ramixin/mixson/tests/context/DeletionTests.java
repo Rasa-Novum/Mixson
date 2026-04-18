@@ -12,6 +12,7 @@ import net.ramixin.mixson.hooks.ListHook;
 import net.ramixin.mixson.hooks.NamespaceHook;
 import net.ramixin.mixson.hooks.StandardHook;
 import net.ramixin.mixson.util.Index;
+import net.ramixin.mixson.util.VersionUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.junit.jupiter.api.Test;
 
@@ -29,7 +30,7 @@ public class DeletionTests {
         Index index = new Index("test:standard_deletion");
         Identifier idWithExt = index.id().withSuffix(".json");
 
-        Identifier otherIdWithExt = Identifier.parse("test:standard_other_deletion.json");
+        Identifier otherIdWithExt = VersionUtils.id("test:standard_other_deletion.json");
 
         Mixson.registerEvent(
                 Mixson.DEFAULT_PRIORITY,

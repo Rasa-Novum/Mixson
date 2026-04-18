@@ -47,7 +47,7 @@ public class CaptureTests {
                 context -> {
                     List<Mutable<JsonElement>> captures = context.captureFiles(otherIndex);
                     assert captures.size() == 1 : "Incorrect number of files captured. Expected 1, but got "+captures.size();
-                    Mutable<JsonElement> capture = captures.getFirst();
+                    Mutable<JsonElement> capture = captures.get(0);
                     log.info("captured file: {}", capture.getValue());
                     log.info("expected file: {}", goalObject);
                     assert capture.getValue().equals(goalObject) : "Captured file was not serialized correctly";
@@ -85,7 +85,7 @@ public class CaptureTests {
                 context -> {
                     List<Mutable<JsonElement>> captures = context.captureFiles(otherIndex);
                     assert captures.size() == 1 : "Incorrect number of files captured. Expected 1, but got "+captures.size();
-                    Mutable<JsonElement> capture = captures.getFirst();
+                    Mutable<JsonElement> capture = captures.get(0);
                     assert capture.getValue().equals(goalObject) : "Captured file was not serialized correctly";
 
                     Throwable exception = Assertions.assertThrows(MixsonException.class, () -> context.captureFiles(otherIndex)).getCause();
@@ -122,7 +122,7 @@ public class CaptureTests {
                 context -> {
                     List<Mutable<JsonElement>> captures = context.captureFiles(otherIndex);
                     assert captures.size() == 1 : "Incorrect number of files captured. Expected 1, but got "+captures.size();
-                    Mutable<JsonElement> capture = captures.getFirst();
+                    Mutable<JsonElement> capture = captures.get(0);
                     assert capture.getValue().equals(goalObject) : "Captured file was not serialized correctly";
 
                     Throwable exception = Assertions.assertThrows(MixsonException.class, () -> context.captureFiles(otherIndex)).getCause();

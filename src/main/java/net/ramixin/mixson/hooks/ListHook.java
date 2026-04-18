@@ -57,7 +57,7 @@ public class ListHook extends AbstractHook<Map<Identifier, List<Resource>>> {
         }
         if(resources.size() != 1)
             throw new IllegalArgumentException("Cannot insert resource list with index "+index);
-        Resource resource = resources.getFirst();
+        Resource resource = resources.get(0);
         List<Resource> mutableList = new ArrayList<>(immutableList != null ? immutableList : List.of());
         if(overwrite)
             mutableList.set(index.ordinal(), resource);

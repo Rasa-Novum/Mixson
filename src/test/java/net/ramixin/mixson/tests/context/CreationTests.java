@@ -90,7 +90,7 @@ public class CreationTests {
         assert resourceMap.containsKey(IdAExt) : "Resource list missing (A)";
         List<Resource> resourceListA = resourceMap.get(IdAExt);
         assert resourceListA.size() == 1 : "Wrong number of resources (A)";
-        JsonElement element = MixsonCodecs.JSON_ELEMENT.deserialize(resourceListA.getFirst());
+        JsonElement element = MixsonCodecs.JSON_ELEMENT.deserialize(resourceListA.get(0));
         assert element.equals(objectA) : "Deserialized resource does not match (A)";
 
         assert resourceMap.containsKey(IdBExt) : "Resource list missing (B)";

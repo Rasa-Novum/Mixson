@@ -55,7 +55,7 @@ public class NamespaceHook extends AbstractHook<List<Resource>> {
         }
         if(resources.size() != 1)
             throw new IllegalArgumentException("Cannot insert resource: list with index "+index);
-        Resource resource = resources.getFirst();
+        Resource resource = resources.get(0);
         if(index.ordinal() >= this.attachedResources.size())
             throw new IllegalStateException("Cannot overwrite resource: Resource with index " + index + " does not exists");
         if(overwrite)

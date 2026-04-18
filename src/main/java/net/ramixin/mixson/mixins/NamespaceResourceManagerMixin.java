@@ -28,6 +28,6 @@ public class NamespaceResourceManagerMixin {
     private Optional<Resource> runMixsonEvents(Optional<Resource> original, Identifier id) {
         if(original.isEmpty()) return Optional.empty();
         List<Resource> result = Mixson.processHook(new NamespaceHook(new ArrayList<>(List.of(original.get())), id));
-        return Optional.ofNullable(result.getFirst());
+        return Optional.ofNullable(result.get(0));
     }
 }

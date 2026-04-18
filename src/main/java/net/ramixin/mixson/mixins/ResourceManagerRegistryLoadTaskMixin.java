@@ -23,8 +23,10 @@ public class ResourceManagerRegistryLoadTaskMixin {
     @WrapOperation(
             //? if >=26.1 {
             method = "lambda$load$0",
-            //?} else {
+            //?} else if >1.20.1 {
             /*method = "loadContentsFromManager",
+            *///?} else {
+            /*method = "loadRegistryContents",
             *///?}
             at = @At(value = "INVOKE", target = "Lnet/minecraft/resources/FileToIdConverter;listMatchingResources(Lnet/minecraft/server/packs/resources/ResourceManager;)Ljava/util/Map;")
     )

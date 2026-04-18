@@ -20,6 +20,7 @@ stonecutter {
     create(rootProject) {
         version("26.1.2-fabric", "26.1.2").buildscript = "build.fabric-26.gradle.kts"
         version("1.21.1-fabric", "1.21.1").buildscript = "build.fabric-remap.gradle.kts"
+        version("1.20.1-fabric", "1.20.1").buildscript = "build.fabric-remap.gradle.kts"
         vcsVersion = "26.1.2-fabric"
     }
 }

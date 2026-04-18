@@ -72,7 +72,11 @@ public interface MixsonCodecs {
 
         @Override
         public CompoundTag deserialize(Resource r) throws IOException {
+            //? if >1.20.1 {
             return NbtIo.readCompressed(r.open(), NbtAccounter.unlimitedHeap());
+            //?} else {
+            /*return NbtIo.readCompressed(r.open());
+            *///?}
         }
 
         @Override
@@ -97,4 +101,5 @@ public interface MixsonCodecs {
         NbtIo.writeCompressed(compound, baos);
         return baos;
     }
+
 }
