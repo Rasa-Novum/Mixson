@@ -3,7 +3,6 @@ import org.gradle.api.tasks.Delete
 
 plugins {
     id("dev.kikugie.stonecutter")
-    id("net.fabricmc.fabric-loom") version "1.15.5" apply false
     id("fabric-loom") version "1.15.5" apply false
     id("net.neoforged.moddev") version "2.0.141" apply false
     id("net.neoforged.moddev.legacyforge") version "2.0.141" apply false
