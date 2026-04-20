@@ -1,9 +1,9 @@
+import org.gradle.api.tasks.bundling.AbstractArchiveTask
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import java.util.Properties
 
 plugins {
     id("net.neoforged.moddev")
-    id("maven-publish")
 }
 
 val versionProperties = Properties().apply {
@@ -20,7 +20,6 @@ fun prop(name: String): String =
         ?: error("Missing property '$name'")
 
 version = prop("mod_version")
-group = prop("maven_group")
 
 base {
     archivesName = prop("archives_base_name")
@@ -105,20 +104,16 @@ java {
     targetCompatibility = JavaVersion.toVersion(targetJavaVersion)
 }
 
+tasks.named<AbstractArchiveTask>("sourcesJar") {
+    archiveClassifier.set("${project.name}-sources")
+}
+
 tasks.jar {
+    archiveClassifier.set(project.name)
     manifest {
         attributes("MixinConfigs" to "mixson.mixins.json")
     }
     from("LICENSE.txt") {
         rename { "${it}_${project.base.archivesName.get()}" }
-    }
-}
-
-publishing {
-    publications {
-        create<MavenPublication>("mavenJava") {
-            artifactId = prop("archives_base_name")
-            from(components["java"])
-        }
     }
 }

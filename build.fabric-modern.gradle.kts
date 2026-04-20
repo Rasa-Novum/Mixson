@@ -1,9 +1,9 @@
+import org.gradle.api.tasks.bundling.AbstractArchiveTask
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import java.util.Properties
 
 plugins {
     id("net.fabricmc.fabric-loom")
-    id("maven-publish")
 }
 
 val versionProperties = Properties().apply {
@@ -20,7 +20,6 @@ fun prop(name: String): String =
         ?: error("Missing property '$name'")
 
 version = prop("mod_version")
-group = prop("maven_group")
 
 base {
     archivesName = prop("archives_base_name")
@@ -78,17 +77,13 @@ java {
     targetCompatibility = JavaVersion.toVersion(targetJavaVersion)
 }
 
-tasks.jar {
-    from("LICENSE.txt") {
-        rename { "${it}_${project.base.archivesName.get()}" }
-    }
+tasks.named<AbstractArchiveTask>("sourcesJar") {
+    archiveClassifier.set("${project.name}-sources")
 }
 
-publishing {
-    publications {
-        create<MavenPublication>("mavenJava") {
-            artifactId = prop("archives_base_name")
-            from(components["java"])
-        }
+tasks.jar {
+    archiveClassifier.set(project.name)
+    from("LICENSE.txt") {
+        rename { "${it}_${project.base.archivesName.get()}" }
     }
 }
