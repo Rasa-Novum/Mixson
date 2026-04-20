@@ -10,9 +10,9 @@
 ## Support
 | MC Version | Fabric Version | Forge Version | NeoForge Version | Quilt Version |
 |:----------:|:--------------:|:-------------:|:----------------:|:-------------:|
-|   26.1.x   |   ✅`v2.1.0`    | ❌ Not Planned |      🚧 WIP      | ❌ Not Planned |
-|   1.21.1   |   ✅`v2.1.0`    | ❌ Not Planned |      🚧 WIP      | ❌ Not Planned |
-|   1.20.1   |   ✅`v2.1.0`    |    🚧 WIP     |  ❌ Not Planned   | ❌ Not Planned |
+|   26.1.x   |   ✅`v2.1.0`    | ❌ Not Planned |    ✅`v2.1.0`     | ❌ Not Planned |
+|   1.21.1   |   ✅`v2.1.0`    | ❌ Not Planned |    ✅`v2.1.0`     | ❌ Not Planned |
+|   1.20.1   |   ✅`v2.1.0`    |   ✅`v2.1.0`   |  ❌ Not Planned   | ❌ Not Planned |
 
 Note: I only plan on adding support for the versions I need for my mods, but adding additional version support should be fairly easy if anyone else would like to do so.
 

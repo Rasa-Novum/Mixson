@@ -2,7 +2,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 import java.util.Properties
 
 plugins {
-    id("net.fabricmc.fabric-loom")
+    id("net.neoforged.moddev.legacyforge")
     id("maven-publish")
 }
 
@@ -26,14 +26,47 @@ base {
     archivesName = prop("archives_base_name")
 }
 
+legacyForge {
+    version = prop("deps.forge")
+    runs {
+        register("client") {
+            client()
+        }
+        register("server") {
+            server()
+        }
+    }
+
+    mods {
+        register("mixson") {
+            sourceSet(sourceSets.main.get())
+        }
+    }
+}
+
+mixin {
+    add(sourceSets.main.get(), "mixson.refmap.json")
+    config("mixson.mixins.json")
+}
+
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    minecraft("com.mojang:minecraft:${prop("deps.minecraft")}")
-    implementation("net.fabricmc:fabric-loader:${prop("deps.loader")}")
-    testImplementation("net.fabricmc:fabric-loader-junit:${prop("deps.loader")}")
+    val mixinExtrasVersion = prop("deps.mixinextras")
+    compileOnly("io.github.llamalad7:mixinextras-common:${prop("deps.mixinextras")}")
+    jarJar(implementation("io.github.llamalad7:mixinextras-forge:$mixinExtrasVersion")!!)
+    annotationProcessor("org.spongepowered:mixin:0.8.7:processor")
+    testImplementation(platform("org.junit:junit-bom:5.10.2"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+val mainSourceSet = sourceSets.main.get()
+sourceSets.named("test") {
+    compileClasspath += mainSourceSet.output + mainSourceSet.compileClasspath
+    runtimeClasspath += mainSourceSet.output + mainSourceSet.runtimeClasspath
 }
 
 tasks.processResources {
@@ -42,19 +75,21 @@ tasks.processResources {
     val props = mapOf(
         "version" to project.version,
         "minecraft_version" to prop("deps.minecraft"),
-        "loader_version" to prop("deps.loader"),
+        "minecraft_version_range" to prop("deps.minecraft_range"),
+        "loader_version" to prop("deps.forge"),
+        "loader_version_range" to prop("deps.forge_range"),
         "mixin_compatibility" to prop("mixin_compatibility"),
     )
 
     inputs.properties(props)
 
-    filesMatching("fabric.mod.json") {
+    filesMatching("META-INF/mods.toml") {
         expand(props)
     }
     filesMatching("mixson.mixins.json") {
         expand(props)
     }
-    exclude("META-INF/mods.toml", "META-INF/neoforge.mods.toml")
+    exclude("fabric.mod.json", "META-INF/neoforge.mods.toml")
 }
 
 tasks.test {
@@ -79,6 +114,9 @@ java {
 }
 
 tasks.jar {
+    manifest {
+        attributes("MixinConfigs" to "mixson.mixins.json")
+    }
     from("LICENSE.txt") {
         rename { "${it}_${project.base.archivesName.get()}" }
     }

@@ -55,6 +55,7 @@ tasks.processResources {
     filesMatching("mixson.mixins.json") {
         expand(props)
     }
+    exclude("META-INF/mods.toml", "META-INF/neoforge.mods.toml")
 }
 
 tasks.test {

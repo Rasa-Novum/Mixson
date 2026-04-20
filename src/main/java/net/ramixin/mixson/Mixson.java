@@ -2,7 +2,6 @@ package net.ramixin.mixson;
 
 
 import com.google.gson.JsonElement;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.packs.resources.Resource;
 import net.ramixin.mixson.entries.AbstractEntry;
 import net.ramixin.mixson.entries.EventEntry;
@@ -12,6 +11,7 @@ import net.ramixin.mixson.enums.ErrorPolicy;
 import net.ramixin.mixson.enums.Lifetime;
 import net.ramixin.mixson.hooks.AbstractHook;
 import net.ramixin.mixson.util.Index;
+import net.ramixin.mixson.util.PlatformUtils;
 import net.ramixin.mixson.util.functions.Event;
 import net.ramixin.mixson.util.interfaces.ErrorMessageProvider;
 import net.ramixin.mixson.util.interfaces.MixsonCodec;
@@ -269,7 +269,7 @@ public final class Mixson {
     }
 
     private static <T> void exportDebugFile(MixsonCodec<T> codec, T resource, String eventName, String resourceId, String extension, boolean patched) {
-        Path rawDir = FabricLoader.getInstance().getGameDir().resolve(".mixson");
+        Path rawDir = PlatformUtils.getGameDir().resolve(".mixson");
         Path patchDir;
         if(patched) patchDir = rawDir.resolve("patched");
         else patchDir = rawDir.resolve("unpatched");
@@ -286,7 +286,7 @@ public final class Mixson {
 
     static {
         try {
-            FileUtils.deleteDirectory(FabricLoader.getInstance().getGameDir().resolve(".mixson").toFile());
+            FileUtils.deleteDirectory(PlatformUtils.getGameDir().resolve(".mixson").toFile());
         } catch (Exception e) {
             LOGGER.error("failed to delete .mixson debug directory", e);
         }

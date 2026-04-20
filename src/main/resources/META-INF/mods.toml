@@ -1,0 +1,28 @@
+modLoader = "javafml"
+loaderVersion = "${loader_version_range}"
+license = "MIT"
+issueTrackerURL = "https://github.com/Ramixin/Mixson/issues"
+
+[[mods]]
+modId = "mixson"
+version = "${version}"
+displayName = "Mixson"
+logoFile = "assets/mixson/icon.png"
+authors = "Ramixin"
+description = '''
+Allows in-code manipulation of asset/data resources
+'''
+
+[[dependencies.mixson]]
+modId = "forge"
+mandatory = true
+versionRange = "${loader_version_range}"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.mixson]]
+modId = "minecraft"
+mandatory = true
+versionRange = "${minecraft_version_range}"
+ordering = "NONE"
+side = "BOTH"
