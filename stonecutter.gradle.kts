@@ -13,6 +13,8 @@ stonecutter.active("26.1.2-fabric")
 val releaseTargets = listOf(
     "26.1.2-fabric",
     "26.1.2-neoforge",
+    "26.1-fabric",
+    "26.1-neoforge",
     "1.21.1-fabric",
     "1.21.1-neoforge",
     "1.20.1-fabric",
