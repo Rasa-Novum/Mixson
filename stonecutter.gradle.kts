@@ -21,6 +21,15 @@ val releaseTargets = listOf(
     "1.20.1-forge",
 )
 
+val mavenTargets = listOf(
+    "1.20.1-fabric",
+    "1.20.1-forge",
+    "1.21.1-fabric",
+    "1.21.1-neoforge",
+    "26.1-fabric",
+    "26.1-neoforge",
+)
+
 val cleanReleaseArtifacts = tasks.register<Delete>("cleanReleaseArtifacts") {
     group = "build"
     description = "Deletes the aggregated release artifact directory."
@@ -60,6 +69,12 @@ tasks.register("buildReleaseArtifacts") {
     group = "build"
     description = "Builds every supported target and collects release jars in build/release."
     dependsOn(collectReleaseArtifacts)
+}
+
+tasks.register("publishMavenArtifacts") {
+    group = "publishing"
+    description = "Publishes the supported Mixson mod jars into build/maven-repository."
+    dependsOn(mavenTargets.map { ":$it:publishMixsonPublicationToLocalRepository" })
 }
 
 stonecutter {

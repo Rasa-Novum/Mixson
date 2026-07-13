@@ -91,3 +91,5 @@ tasks.jar {
         rename { "${it}_${project.base.archivesName.get()}" }
     }
 }
+
+apply(from = rootProject.file("gradle/mixson-publishing.gradle.kts"))
