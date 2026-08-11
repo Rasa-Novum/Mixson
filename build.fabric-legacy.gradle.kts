@@ -1,5 +1,6 @@
 import org.gradle.api.tasks.bundling.AbstractArchiveTask
 import org.gradle.api.tasks.testing.logging.TestLogEvent
+import net.fabricmc.loom.task.RemapJarTask
 import java.util.Properties
 
 plugins {
@@ -93,3 +94,22 @@ tasks.jar {
 }
 
 apply(from = rootProject.file("gradle/mixson-publishing.gradle.kts"))
+apply(from = rootProject.file("gradle/mixson-rosetta.gradle.kts"))
+
+if (project.findProperty("rosetta_jar") != null || project.findProperty("publish_mixson_rosetta") == "true") {
+    val companionJar = tasks.named<AbstractArchiveTask>("mixsonRosettaJar")
+    val remappedCompanion = tasks.register<RemapJarTask>("remapMixsonRosettaJar") {
+        inputFile.set(companionJar.flatMap { it.archiveFile })
+        archiveClassifier.set(null as String?)
+        dependsOn(companionJar)
+    }
+    tasks.named("buildMixsonRosetta") { dependsOn(remappedCompanion) }
+    extensions.configure<org.gradle.api.publish.PublishingExtension> {
+        publications.named<org.gradle.api.publish.maven.MavenPublication>("mixsonRosetta") {
+            artifacts.removeIf { it.file == companionJar.get().archiveFile.get().asFile }
+            artifact(remappedCompanion) {
+                classifier = null
+            }
+        }
+    }
+}
