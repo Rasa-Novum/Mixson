@@ -127,3 +127,4 @@ tasks.jar {
 }
 
 apply(from = rootProject.file("gradle/mixson-publishing.gradle.kts"))
+apply(from = rootProject.file("gradle/mixson-rosetta.gradle.kts"))

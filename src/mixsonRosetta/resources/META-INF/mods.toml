@@ -1,0 +1,40 @@
+modLoader = "javafml"
+loaderVersion = "${loader_version_range}"
+license = "MIT"
+
+[[mods]]
+modId = "mixson_rosetta"
+version = "${version}"
+displayName = "Mixson Rosetta"
+authors = "Rasa Novum"
+description = '''
+Server-owned datapack asset synchronization for Mixson and Rosetta
+'''
+
+[[dependencies.mixson_rosetta]]
+modId = "forge"
+mandatory = true
+versionRange = "${loader_version_range}"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.mixson_rosetta]]
+modId = "minecraft"
+mandatory = true
+versionRange = "${minecraft_version_range}"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.mixson_rosetta]]
+modId = "mixson"
+mandatory = true
+versionRange = "[${version},)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.mixson_rosetta]]
+modId = "rosetta_library"
+mandatory = true
+versionRange = "*"
+ordering = "AFTER"
+side = "BOTH"

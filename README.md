@@ -29,13 +29,15 @@ Check out https://github.com/Ramixin/Mixson for more information.
 
 ```kotlin
 repositories {
-    maven("https://raw.githubusercontent.com/xameryn/Mixson/maven/")
+    maven("https://raw.githubusercontent.com/RasaNovum/Mixson/maven/")
 }
 
 dependencies {
-    implementation("com.rasanovum.mixson:mixson-26.1-fabric:2.1.0")
+    implementation("com.rasanovum.mixson:mixson-26.1-fabric:2.2.0")
 }
 ```
+
+The optional `mixson-rosetta-${minecraft}-${loader}` companion provides explicit server-owned datapack asset snapshots over Rosetta. See [`docs/mixson-rosetta.md`](docs/mixson-rosetta.md) for registration and artifact details.
 
 ## License
 This project is under an MIT

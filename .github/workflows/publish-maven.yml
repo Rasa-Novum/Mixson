@@ -24,7 +24,7 @@ jobs:
           java-version: "25"
 
       - name: Build and stage Maven repository
-        run: bash ./gradlew publishMavenArtifacts
+        run: bash ./gradlew publishMavenArtifacts publishMavenRosettaArtifacts -Ppublish_mixson_rosetta=true
 
       - name: Publish Maven repository branch
         env:

@@ -77,6 +77,18 @@ tasks.register("publishMavenArtifacts") {
     dependsOn(mavenTargets.map { ":$it:publishMixsonPublicationToLocalRepository" })
 }
 
+tasks.register("buildMixsonRosettaArtifacts") {
+    group = "build"
+    description = "Builds the optional Mixson Rosetta companion for every supported Maven target."
+    dependsOn(mavenTargets.map { ":$it:buildMixsonRosetta" })
+}
+
+tasks.register("publishMavenRosettaArtifacts") {
+    group = "publishing"
+    description = "Publishes the Mixson Rosetta companion artifacts into build/maven-repository."
+    dependsOn(mavenTargets.map { ":$it:publishMixsonRosettaPublicationToLocalRepository" })
+}
+
 stonecutter {
     parameters {
         val projectName = current.project
