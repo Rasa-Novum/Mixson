@@ -29,7 +29,7 @@ Check out https://github.com/Ramixin/Mixson for more information.
 
 ```kotlin
 repositories {
-    maven("https://raw.githubusercontent.com/RasaNovum/Mixson/maven/")
+    maven("https://raw.githubusercontent.com/Rasa-Novum/Mixson/maven/")
 }
 
 dependencies {
