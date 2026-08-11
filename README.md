@@ -3,7 +3,7 @@
 <img src="brand.png" alt="Mixson brand icon">
 
 ### A simple lightweight library for modded Minecraft that allows for .json resource files to be modified, created, or deleted at runtime through an event-based system.
-#### This is a fork of the original [Mixson](https://modrinth.com/mod/mixson) by [Ramixin](https://github.com/Ramixin). This version has been refactored for multi-loader (Fabric, Forge, NeoForge) and multi-version (26.1.2, 1.21.1, 1.20.1) support using [Stonecutter](https://stonecutter.kikugie.dev/) for use with [our mods](https://github.com/RasaNovum/Via_Romana/).
+#### This is a fork of the original [Mixson](https://modrinth.com/mod/mixson) by [Ramixin](https://github.com/Ramixin). This version has been refactored for multi-loader (Fabric, Forge, NeoForge) and multi-version (26.1.2, 1.21.1, 1.20.1) support using [Stonecutter](https://stonecutter.kikugie.dev/) for use with [our mods](https://github.com/Rasa-Novum/Via_Romana/).
 
 ---
 

@@ -47,7 +47,7 @@ extensions.configure<PublishingExtension> {
             pom {
                 name = "Mixson ($target)"
                 description = "A lightweight runtime JSON resource modification library for Minecraft."
-                url = "https://github.com/RasaNovum/Mixson"
+                url = "https://github.com/Rasa-Novum/Mixson"
                 licenses {
                     license {
                         name = "The MIT License"
@@ -55,9 +55,9 @@ extensions.configure<PublishingExtension> {
                     }
                 }
                 scm {
-                    connection = "scm:git:https://github.com/RasaNovum/Mixson.git"
-                    developerConnection = "scm:git:ssh://github.com/RasaNovum/Mixson.git"
-                    url = "https://github.com/RasaNovum/Mixson"
+                    connection = "scm:git:https://github.com/Rasa-Novum/Mixson.git"
+                    developerConnection = "scm:git:ssh://github.com/Rasa-Novum/Mixson.git"
+                    url = "https://github.com/Rasa-Novum/Mixson"
                 }
             }
         }

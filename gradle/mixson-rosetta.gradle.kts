@@ -40,7 +40,7 @@ if (companionEnabled) {
         check(rosettaJarPath.exists()) { "Rosetta dependency does not exist: $rosettaJarPath" }
     } else {
         val rosettaMavenUrl = providers.gradleProperty("rosetta_maven_url")
-            .orElse("https://raw.githubusercontent.com/RasaNovum/Rosetta_Library/maven/")
+            .orElse("https://raw.githubusercontent.com/Rasa-Novum/Rosetta_Library/maven/")
             .get()
         project.repositories.maven {
             name = "RosettaMaven"
@@ -121,7 +121,7 @@ if (companionEnabled) {
             pom {
                 name = "Mixson Rosetta (${project.name})"
                 description = "Server-owned datapack asset synchronization for Mixson and Rosetta."
-            url = "https://github.com/RasaNovum/Mixson"
+            url = "https://github.com/Rasa-Novum/Mixson"
                 licenses {
                     license {
                         name = "The MIT License"
