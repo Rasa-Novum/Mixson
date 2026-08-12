@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /** Registry and lifecycle service for explicitly registered asset channels. */
 public final class AssetChannels {
     private static final Logger LOGGER = LoggerFactory.getLogger("Mixson/Rosetta Assets");
-    private static final Map<Identifier, AssetChannel<?>> CHANNELS = new ConcurrentHashMap<>();
+    private static final Map<Identifier, AssetChannel> CHANNELS = new ConcurrentHashMap<>();
     private static volatile boolean initialized;
 
     private AssetChannels() {}
@@ -32,7 +32,7 @@ public final class AssetChannels {
         }
     }
 
-    public static <T> AssetChannel<T> register(AssetChannel<T> channel) {
+    public static AssetChannel register(AssetChannel channel) {
         initialize();
         if (CHANNELS.putIfAbsent(channel.id(), channel) != null) {
             throw new IllegalArgumentException("Duplicate asset channel: " + channel.id());
@@ -41,7 +41,7 @@ public final class AssetChannels {
     }
 
     static void handleClientSnapshot(AssetSnapshotS2C packet) {
-        AssetChannel<?> channel = CHANNELS.get(packet.channel());
+        AssetChannel channel = CHANNELS.get(packet.channel());
         if (channel == null) {
             LOGGER.warn("Ignoring asset snapshot for unregistered channel {}", packet.channel());
             return;

@@ -2,27 +2,18 @@
 
 `mixson-rosetta-${minecraft}-${loader}` is an optional companion artifact. It keeps Mixson's core artifact independent of Rosetta while providing a small, explicit server-owned datapack asset API.
 
-A consumer registers each channel during common initialization. The channel owns its namespace, resource discovery, decoder, limits, and client snapshot consumer:
+A consumer registers each channel during common initialization. The channel discovers matching datapack files and exposes their raw bytes to a client snapshot consumer:
 
 ```java
-private static final AssetChannel<JsonElement> NAMES = AssetChannel
-        .builder(
-                RegistryCompat.getLocation("example_mod:names"),
-                AssetCodecs.JSON
-        )
-        .discovery(AssetDiscovery.folder(
-                "names",
-                ".json",
-                id -> id.getNamespace().equals("example_mod")
-        ))
-        .limits(64 * 1024, 512 * 1024, 256)
-        .clientSnapshot((channel, snapshot) -> NamesClient.replaceSnapshot(snapshot))
-        .register();
+AssetChannel.register(
+        RegistryCompat.getLocation("example_mod:names"),
+        "names", ".json",
+        64 * 1024, 512 * 1024, 256,
+        (channel, snapshot) -> NamesClient.replaceSnapshot(snapshot)
+);
 ```
 
-Resources are discovered from the server `ResourceManager`, decoded and re-encoded into a complete snapshot, then cached per server. The snapshot is sent on player join and after every successful Rosetta datapack-reload callback. A reload with no matching resources sends an empty snapshot, so clients do not retain removed assets.
-
-`AssetCodecs.BYTES` is the generic byte-payload path. `AssetCodecs.JSON` is the convenience JSON path; custom codecs implement `AssetCodec<T>` when a channel needs another format. The server decodes each resource once for validation and sends the original bounded bytes. Malformed resources and assets over the per-asset, total-byte, or count limit are logged and skipped. Client snapshots are immutable and replaced as one callback value.
+Resources are discovered from the server `ResourceManager` and sent as one complete raw-byte snapshot, cached per server. The snapshot is sent on player join and after every Rosetta datapack-reload callback. A reload with no matching resources sends an empty snapshot, so clients do not retain removed assets. The consumer owns format parsing; the channel only enforces the configured byte and count limits.
 
 ### Implementation
 
