@@ -33,7 +33,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.rasanovum.mixson:mixson-26.1-fabric:2.2.0")
+    implementation("com.rasanovum.mixson:mixson-1.21.1-fabric:2.2.0")
 }
 ```
 
