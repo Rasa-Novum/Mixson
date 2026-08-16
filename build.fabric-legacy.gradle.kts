@@ -95,6 +95,7 @@ tasks.jar {
 
 apply(from = rootProject.file("gradle/mixson-publishing.gradle.kts"))
 apply(from = rootProject.file("gradle/mixson-rosetta.gradle.kts"))
+apply(from = rootProject.file("gradle/mixson-pack-metadata.gradle.kts"))
 
 if (project.findProperty("rosetta_jar") != null || project.findProperty("publish_mixson_rosetta") == "true") {
     val companionJar = tasks.named<AbstractArchiveTask>("mixsonRosettaJar")
