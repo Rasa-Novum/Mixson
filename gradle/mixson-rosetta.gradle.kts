@@ -7,12 +7,13 @@ import org.gradle.language.jvm.tasks.ProcessResources
 val configuredRosettaPath = providers.gradleProperty("rosetta_jar")
     .map { file(it) }
     .orNull
+val rosettaVersion = providers.gradleProperty("deps.rosetta").get()
 
 val rosettaJarPath = configuredRosettaPath?.let { configured ->
     if (configured.isDirectory) {
         listOf(
-            configured.resolve("build/release/Rosetta-0.1.1-${project.name}.jar"),
-            configured.resolve("libs/rosetta/${project.name}/Rosetta-0.1.1-${project.name}.jar"),
+            configured.resolve("build/release/Rosetta-$rosettaVersion-${project.name}.jar"),
+            configured.resolve("libs/rosetta/${project.name}/Rosetta-$rosettaVersion-${project.name}.jar"),
             configured.resolve("versions/${project.name}/build/classes/java/main"),
         ).firstOrNull { it.exists() } ?: configured
     } else {
@@ -62,7 +63,6 @@ if (companionEnabled) {
     if (rosettaJarPath != null) {
         dependencies.add(loaderConfiguration, files(rosettaJarPath))
     } else {
-        val rosettaVersion = project.findProperty("deps.rosetta")?.toString() ?: "0.1.1"
         dependencies.add(
             loaderConfiguration,
             "com.rasanovum.rosetta:rosetta-${project.name}:$rosettaVersion"
@@ -139,7 +139,7 @@ if (companionEnabled) {
                     dependency("com.rasanovum.mixson", "mixson-${project.name}", project.version.toString())
                     dependency(
                         "com.rasanovum.rosetta", "rosetta-${project.name}",
-                        project.findProperty("deps.rosetta")?.toString() ?: "0.1.1"
+                        rosettaVersion
                     )
                 }
             }
