@@ -23,8 +23,11 @@ jobs:
           distribution: temurin
           java-version: "25"
 
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
       - name: Build and stage Maven repository
-        run: bash ./gradlew publishMavenArtifacts publishMavenRosettaArtifacts -Ppublish_mixson_rosetta=true
+        run: bash ./gradlew --parallel publishMavenArtifacts publishMavenRosettaArtifacts -Ppublish_mixson_rosetta=true
 
       - name: Publish Maven repository branch
         env:
