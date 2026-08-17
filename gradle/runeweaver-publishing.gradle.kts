@@ -14,6 +14,8 @@ group = "com.rasanovum.runeweaver"
 
 val modJar = if (isLegacyFabric) {
     tasks.named<AbstractArchiveTask>("remapJar")
+} else if (loader == "forge") {
+    tasks.named<AbstractArchiveTask>("reobfJar")
 } else {
     tasks.named<Jar>("jar")
 }
