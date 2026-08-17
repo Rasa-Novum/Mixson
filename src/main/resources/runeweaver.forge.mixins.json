@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "refmap": "runeweaver.refmap.json",
+  "package": "net.rasanovum.runeweaver.mixins",
+  "compatibilityLevel": "${mixin_compatibility}",
+  "mixins": [
+    "NamespaceResourceManagerMixin",
+    "ResourceManagerImplMixinArray",
+    "ResourceManagerRegistryLoadTaskMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

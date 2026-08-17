@@ -45,7 +45,7 @@ legacyForge {
 
 mixin {
     add(sourceSets.main.get(), "runeweaver.refmap.json")
-    config("runeweaver.mixins.json")
+    config("runeweaver.forge.mixins.json")
 }
 
 repositories {
@@ -54,7 +54,7 @@ repositories {
 
 dependencies {
     val mixinExtrasVersion = prop("deps.mixinextras")
-    compileOnly("io.github.llamalad7:mixinextras-common:${prop("deps.mixinextras")}")
+    compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:$mixinExtrasVersion")!!)
     jarJar(implementation("io.github.llamalad7:mixinextras-forge:$mixinExtrasVersion")!!)
     annotationProcessor("org.spongepowered:mixin:0.8.7:processor")
     testImplementation(platform("org.junit:junit-bom:5.10.2"))
@@ -85,10 +85,10 @@ tasks.processResources {
     filesMatching("META-INF/mods.toml") {
         expand(props)
     }
-    filesMatching("runeweaver.mixins.json") {
+    filesMatching("runeweaver.forge.mixins.json") {
         expand(props)
     }
-    exclude("fabric.mod.json", "META-INF/neoforge.mods.toml")
+    exclude("fabric.mod.json", "META-INF/neoforge.mods.toml", "runeweaver.mixins.json")
 }
 
 tasks.test {
@@ -119,7 +119,7 @@ tasks.named<AbstractArchiveTask>("sourcesJar") {
 tasks.jar {
     archiveClassifier.set(project.name)
     manifest {
-        attributes("MixinConfigs" to "runeweaver.mixins.json")
+        attributes("MixinConfigs" to "runeweaver.forge.mixins.json")
     }
     from("LICENSE.txt") {
         rename { "${it}_${project.base.archivesName.get()}" }
