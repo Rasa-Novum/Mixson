@@ -5,7 +5,8 @@
   "name": "Runeweaver",
   "description": "Allows in-code manipulation of asset/data resources",
   "authors": [
-    "Ramixin"
+    "Ramixin",
+    "xameryn"
   ],
   "contact": {},
   "license": "MIT",

@@ -6,7 +6,7 @@ license = "MIT"
 modId = "runeweaver_rosetta"
 version = "${version}"
 displayName = "Runeweaver Rosetta"
-authors = "Rasa Novum"
+authors = "xameryn"
 description = '''
 Server-owned datapack asset synchronization for Runeweaver and Rosetta
 '''

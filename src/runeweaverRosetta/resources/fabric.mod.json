@@ -4,7 +4,7 @@
   "version": "${version}",
   "name": "Runeweaver Rosetta",
   "description": "Server-owned datapack asset synchronization for Runeweaver and Rosetta",
-  "authors": ["Rasa Novum"],
+  "authors": ["xameryn"],
   "license": "MIT",
   "environment": "*",
   "entrypoints": {

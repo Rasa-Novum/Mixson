@@ -8,7 +8,7 @@ modId = "runeweaver"
 version = "${version}"
 displayName = "Runeweaver"
 logoFile = "logo.png"
-authors = "Ramixin"
+authors = "Ramixin, xameryn"
 description = '''
 Allows in-code manipulation of asset/data resources
 '''
