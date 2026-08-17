@@ -1,0 +1,6 @@
+{
+  "pack": {
+    ${pack_metadata}
+    "description": "Runeweaver Rosetta resources"
+  }
+}

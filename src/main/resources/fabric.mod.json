@@ -1,18 +1,18 @@
 {
   "schemaVersion": 1,
-  "id": "mixson",
+  "id": "runeweaver",
   "version": "${version}",
-  "name": "Mixson",
+  "name": "Runeweaver",
   "description": "Allows in-code manipulation of asset/data resources",
   "authors": [
     "Ramixin"
   ],
   "contact": {},
   "license": "MIT",
-  "icon": "assets/mixson/icon.png",
+  "icon": "logo.png",
   "environment": "*",
   "mixins": [
-    "mixson.mixins.json"
+    "runeweaver.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=${loader_version}",

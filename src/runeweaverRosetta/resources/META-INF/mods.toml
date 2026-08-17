@@ -1,0 +1,40 @@
+modLoader = "javafml"
+loaderVersion = "${loader_version_range}"
+license = "MIT"
+
+[[mods]]
+modId = "runeweaver_rosetta"
+version = "${version}"
+displayName = "Runeweaver Rosetta"
+authors = "Rasa Novum"
+description = '''
+Server-owned datapack asset synchronization for Runeweaver and Rosetta
+'''
+
+[[dependencies.runeweaver_rosetta]]
+modId = "forge"
+mandatory = true
+versionRange = "${loader_version_range}"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.runeweaver_rosetta]]
+modId = "minecraft"
+mandatory = true
+versionRange = "${minecraft_version_range}"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.runeweaver_rosetta]]
+modId = "runeweaver"
+mandatory = true
+versionRange = "[${version},)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.runeweaver_rosetta]]
+modId = "rosetta_library"
+mandatory = true
+versionRange = "*"
+ordering = "AFTER"
+side = "BOTH"

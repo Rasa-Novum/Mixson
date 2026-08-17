@@ -73,20 +73,20 @@ tasks.register("buildReleaseArtifacts") {
 
 tasks.register("publishMavenArtifacts") {
     group = "publishing"
-    description = "Publishes the supported Mixson mod jars into build/maven-repository."
-    dependsOn(mavenTargets.map { ":$it:publishMixsonPublicationToLocalRepository" })
+    description = "Publishes the supported Runeweaver mod jars into build/maven-repository."
+    dependsOn(mavenTargets.map { ":$it:publishRuneweaverPublicationToLocalRepository" })
 }
 
-tasks.register("buildMixsonRosettaArtifacts") {
+tasks.register("buildRuneweaverRosettaArtifacts") {
     group = "build"
-    description = "Builds the optional Mixson Rosetta companion for every supported Maven target."
-    dependsOn(mavenTargets.map { ":$it:buildMixsonRosetta" })
+    description = "Builds the optional Runeweaver Rosetta companion for every supported Maven target."
+    dependsOn(mavenTargets.map { ":$it:buildRuneweaverRosetta" })
 }
 
 tasks.register("publishMavenRosettaArtifacts") {
     group = "publishing"
-    description = "Publishes the Mixson Rosetta companion artifacts into build/maven-repository."
-    dependsOn(mavenTargets.map { ":$it:publishMixsonRosettaPublicationToLocalRepository" })
+    description = "Publishes the Runeweaver Rosetta companion artifacts into build/maven-repository."
+    dependsOn(mavenTargets.map { ":$it:publishRuneweaverRosettaPublicationToLocalRepository" })
 }
 
 stonecutter {

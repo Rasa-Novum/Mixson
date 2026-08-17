@@ -1,6 +1,0 @@
-{
-  "pack": {
-    ${pack_metadata}
-    "description": "Mixson Rosetta resources"
-  }
-}

@@ -37,15 +37,15 @@ legacyForge {
     }
 
     mods {
-        register("mixson") {
+        register("runeweaver") {
             sourceSet(sourceSets.main.get())
         }
     }
 }
 
 mixin {
-    add(sourceSets.main.get(), "mixson.refmap.json")
-    config("mixson.mixins.json")
+    add(sourceSets.main.get(), "runeweaver.refmap.json")
+    config("runeweaver.mixins.json")
 }
 
 repositories {
@@ -85,7 +85,7 @@ tasks.processResources {
     filesMatching("META-INF/mods.toml") {
         expand(props)
     }
-    filesMatching("mixson.mixins.json") {
+    filesMatching("runeweaver.mixins.json") {
         expand(props)
     }
     exclude("fabric.mod.json", "META-INF/neoforge.mods.toml")
@@ -119,13 +119,13 @@ tasks.named<AbstractArchiveTask>("sourcesJar") {
 tasks.jar {
     archiveClassifier.set(project.name)
     manifest {
-        attributes("MixinConfigs" to "mixson.mixins.json")
+        attributes("MixinConfigs" to "runeweaver.mixins.json")
     }
     from("LICENSE.txt") {
         rename { "${it}_${project.base.archivesName.get()}" }
     }
 }
 
-apply(from = rootProject.file("gradle/mixson-publishing.gradle.kts"))
-apply(from = rootProject.file("gradle/mixson-rosetta.gradle.kts"))
-apply(from = rootProject.file("gradle/mixson-pack-metadata.gradle.kts"))
+apply(from = rootProject.file("gradle/runeweaver-publishing.gradle.kts"))
+apply(from = rootProject.file("gradle/runeweaver-rosetta.gradle.kts"))
+apply(from = rootProject.file("gradle/runeweaver-pack-metadata.gradle.kts"))

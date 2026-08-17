@@ -50,7 +50,7 @@ tasks.processResources {
     filesMatching("fabric.mod.json") {
         expand(props)
     }
-    filesMatching("mixson.mixins.json") {
+    filesMatching("runeweaver.mixins.json") {
         expand(props)
     }
     exclude("META-INF/mods.toml", "META-INF/neoforge.mods.toml")
@@ -88,6 +88,6 @@ tasks.jar {
     }
 }
 
-apply(from = rootProject.file("gradle/mixson-publishing.gradle.kts"))
-apply(from = rootProject.file("gradle/mixson-rosetta.gradle.kts"))
-apply(from = rootProject.file("gradle/mixson-pack-metadata.gradle.kts"))
+apply(from = rootProject.file("gradle/runeweaver-publishing.gradle.kts"))
+apply(from = rootProject.file("gradle/runeweaver-rosetta.gradle.kts"))
+apply(from = rootProject.file("gradle/runeweaver-pack-metadata.gradle.kts"))

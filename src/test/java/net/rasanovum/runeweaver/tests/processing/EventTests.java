@@ -1,0 +1,131 @@
+package net.rasanovum.runeweaver.tests.processing;
+
+import com.google.gson.JsonObject;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.resources.Resource;
+import net.rasanovum.runeweaver.Runeweaver;
+import net.rasanovum.runeweaver.enums.ErrorPolicy;
+import net.rasanovum.runeweaver.enums.Lifetime;
+import net.rasanovum.runeweaver.hooks.ListHook;
+import net.rasanovum.runeweaver.hooks.NamespaceHook;
+import net.rasanovum.runeweaver.hooks.StandardHook;
+import net.rasanovum.runeweaver.util.Index;
+import org.apache.commons.lang3.mutable.MutableInt;
+import org.junit.jupiter.api.Test;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static net.rasanovum.runeweaver.tests.TestUtil.*;
+
+public class EventTests {
+
+    @Test
+    public void testStandardEventProcessing() {
+        Index index = new Index("test:standard_run");
+        Identifier indexExt = index.id().withSuffix(".json");
+
+        Index badIndex = new Index("test:standard_not_run");
+
+        MutableInt correctRan = new MutableInt();
+        MutableInt wrongRan = new MutableInt();
+
+        Runeweaver.registerEvent(
+                Runeweaver.DEFAULT_PRIORITY,
+                Lifetime.PERSISTENT,
+                ErrorPolicy.THROW,
+                "Standard - eventThatShouldRun",
+                index::equals,
+                ignored -> correctRan.increment()
+        );
+        Runeweaver.registerEvent(
+                Runeweaver.DEFAULT_PRIORITY,
+                Lifetime.PERSISTENT,
+                ErrorPolicy.THROW,
+                "Standard - eventThatShouldNotRun",
+                badIndex::equals,
+                ignored -> wrongRan.increment()
+        );
+        Map<Identifier, Resource> resourceMap = new HashMap<>(){{
+            put(indexExt, createDummyResource(generateRandomJsonObject()));
+        }};
+        Runeweaver.processHook(new StandardHook(resourceMap));
+        assert (int) correctRan.getValue() == 1 : "Event was not run 1 time, but " + correctRan.getValue() + " times";
+        assert (int) wrongRan.getValue() == 0 : "Wrong event was ran " + wrongRan.getValue() + " time(s)";
+    }
+
+    @Test
+    public void testListEventProcessing() {
+        MutableInt net = new MutableInt();
+        List<Resource> resourceList = generateRandomResourceList(new JsonObject(), net);
+
+        Index index = new Index("test:list_run", (int) net.getValue());
+        Identifier indexExt = index.id().withSuffix(".json");
+
+        Index badIndex = new Index("test:list_not_run", (int) net.getValue());
+
+
+        MutableInt correctRan = new MutableInt();
+        MutableInt wrongRan = new MutableInt();
+
+        Runeweaver.registerEvent(
+                Runeweaver.DEFAULT_PRIORITY,
+                Lifetime.PERSISTENT,
+                ErrorPolicy.THROW,
+                "List - eventThatShouldRun",
+                index::equals,
+                ignored -> correctRan.increment()
+        );
+        Runeweaver.registerEvent(
+                Runeweaver.DEFAULT_PRIORITY,
+                Lifetime.PERSISTENT,
+                ErrorPolicy.THROW,
+                "List - eventThatShouldNotRun",
+                badIndex::equals,
+                ignored -> wrongRan.increment()
+        );
+        Map<Identifier, List<Resource>> resourceMap = new HashMap<>(){{
+            put(indexExt, resourceList);
+        }};
+        Runeweaver.processHook(new ListHook(resourceMap));
+        assert (int) correctRan.getValue() == 1 : "Event was not run 1 time, but " + correctRan.getValue() + " times";
+        assert (int) wrongRan.getValue() == 0 : "Wrong event was run " + wrongRan.getValue() + " time(s)";
+    }
+
+    @Test
+    public void testNamespaceEventProcessing() {
+        MutableInt net = new MutableInt();
+        List<Resource> resourceList = generateRandomResourceList(new JsonObject(), net);
+
+        Index index = new Index("test:namespace_run", (int) net.getValue());
+        Identifier indexExt = index.id().withSuffix(".json");
+
+        Index badIndex = new Index("test:namespace_not_run", (int) net.getValue());
+
+        MutableInt correctRan = new MutableInt();
+        MutableInt wrongRan = new MutableInt();
+
+        Runeweaver.registerEvent(
+                Runeweaver.DEFAULT_PRIORITY,
+                Lifetime.PERSISTENT,
+                ErrorPolicy.THROW,
+                "Namespace - eventThatShouldRun",
+                index::equals,
+                ignored -> correctRan.increment()
+        );
+        Runeweaver.registerEvent(
+                Runeweaver.DEFAULT_PRIORITY,
+                Lifetime.PERSISTENT,
+                ErrorPolicy.THROW,
+                "eventThatShouldNotRun",
+                badIndex::equals,
+                ignored -> wrongRan.increment()
+        );
+        Runeweaver.processHook(new NamespaceHook(resourceList, indexExt));
+        assert (int) correctRan.getValue() == 1 : "Event was not run 1 time, but " + correctRan.getValue() + " times";
+        assert (int) wrongRan.getValue() == 0 : "Wrong event was ran " + wrongRan.getValue() + " time(s)";
+    }
+
+
+}

@@ -27,7 +27,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
 
       - name: Build and stage Maven repository
-        run: bash ./gradlew --parallel publishMavenArtifacts publishMavenRosettaArtifacts -Ppublish_mixson_rosetta=true
+        run: bash ./gradlew --parallel publishMavenArtifacts publishMavenRosettaArtifacts -Ppublish_runeweaver_rosetta=true
 
       - name: Publish Maven repository branch
         env:
@@ -36,7 +36,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          maven_dir="$RUNNER_TEMP/mixson-maven"
+          maven_dir="$RUNNER_TEMP/runeweaver-maven"
           rm -rf "$maven_dir"
           mkdir -p "$maven_dir"
           cd "$maven_dir"

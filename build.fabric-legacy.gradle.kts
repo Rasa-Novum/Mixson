@@ -52,7 +52,7 @@ tasks.processResources {
     filesMatching("fabric.mod.json") {
         expand(props)
     }
-    filesMatching("mixson.mixins.json") {
+    filesMatching("runeweaver.mixins.json") {
         expand(props)
     }
     exclude("META-INF/mods.toml", "META-INF/neoforge.mods.toml")
@@ -93,20 +93,20 @@ tasks.jar {
     }
 }
 
-apply(from = rootProject.file("gradle/mixson-publishing.gradle.kts"))
-apply(from = rootProject.file("gradle/mixson-rosetta.gradle.kts"))
-apply(from = rootProject.file("gradle/mixson-pack-metadata.gradle.kts"))
+apply(from = rootProject.file("gradle/runeweaver-publishing.gradle.kts"))
+apply(from = rootProject.file("gradle/runeweaver-rosetta.gradle.kts"))
+apply(from = rootProject.file("gradle/runeweaver-pack-metadata.gradle.kts"))
 
-if (project.findProperty("rosetta_jar") != null || project.findProperty("publish_mixson_rosetta") == "true") {
-    val companionJar = tasks.named<AbstractArchiveTask>("mixsonRosettaJar")
-    val remappedCompanion = tasks.register<RemapJarTask>("remapMixsonRosettaJar") {
+if (project.findProperty("rosetta_jar") != null || project.findProperty("publish_runeweaver_rosetta") == "true") {
+    val companionJar = tasks.named<AbstractArchiveTask>("runeweaverRosettaJar")
+    val remappedCompanion = tasks.register<RemapJarTask>("remapRuneweaverRosettaJar") {
         inputFile.set(companionJar.flatMap { it.archiveFile })
         archiveClassifier.set(null as String?)
         dependsOn(companionJar)
     }
-    tasks.named("buildMixsonRosetta") { dependsOn(remappedCompanion) }
+    tasks.named("buildRuneweaverRosetta") { dependsOn(remappedCompanion) }
     extensions.configure<org.gradle.api.publish.PublishingExtension> {
-        publications.named<org.gradle.api.publish.maven.MavenPublication>("mixsonRosetta") {
+        publications.named<org.gradle.api.publish.maven.MavenPublication>("runeweaverRosetta") {
             artifacts.removeIf { it.file == companionJar.get().archiveFile.get().asFile }
             artifact(remappedCompanion) {
                 classifier = null

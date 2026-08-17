@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "runeweaver_rosetta",
+  "version": "${version}",
+  "name": "Runeweaver Rosetta",
+  "description": "Server-owned datapack asset synchronization for Runeweaver and Rosetta",
+  "authors": ["Rasa Novum"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["net.rasanovum.runeweaver.rosetta.loaders.fabric.RuneweaverRosettaFabric"]
+  },
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "minecraft": "${minecraft_version}",
+    "runeweaver": "*",
+    "rosetta_library": "*"
+  }
+}
