@@ -1,4 +1,6 @@
+import net.neoforged.moddevgradle.legacyforge.tasks.RemapJar
 import org.gradle.api.tasks.bundling.AbstractArchiveTask
+import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import java.util.Properties
 
@@ -124,6 +126,22 @@ tasks.jar {
     from("LICENSE.txt") {
         rename { "${it}_${project.base.archivesName.get()}" }
     }
+}
+
+val reobfRuneweaverRosettaJar = tasks.register<RemapJar>("reobfRuneweaverRosettaJar") {
+    archiveBaseName.set("Runeweaver-Rosetta")
+    archiveClassifier.set(null as String?)
+    destinationDirectory.set(layout.buildDirectory.dir("reobf"))
+    input.set(provider {
+        tasks.named<Jar>("runeweaverRosettaJar").get().archiveFile.get()
+    })
+    dependsOn("runeweaverRosettaJar")
+
+    val baseReobf = tasks.named<RemapJar>("reobfJar").get()
+    remapOperation.toolType.set(baseReobf.remapOperation.toolType)
+    remapOperation.toolClasspath.from(baseReobf.remapOperation.toolClasspath)
+    remapOperation.mappings.from(baseReobf.remapOperation.mappings)
+    libraries.from(baseReobf.libraries)
 }
 
 apply(from = rootProject.file("gradle/runeweaver-publishing.gradle.kts"))

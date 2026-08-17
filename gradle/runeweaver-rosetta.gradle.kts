@@ -107,14 +107,20 @@ if (companionEnabled) {
         dependsOn(companion.classesTaskName)
     }
 
-    buildCompanion.configure { dependsOn(companionJar) }
+    val companionArtifact = if (project.name.endsWith("-forge")) {
+        tasks.named("reobfRuneweaverRosettaJar")
+    } else {
+        companionJar
+    }
+
+    buildCompanion.configure { dependsOn(companionArtifact) }
 
     extensions.configure<PublishingExtension> {
         publications.create<MavenPublication>("runeweaverRosetta") {
             groupId = "com.rasanovum.runeweaver"
             artifactId = "runeweaver-rosetta-${project.name}"
             version = project.version.toString()
-            artifact(companionJar) {
+            artifact(companionArtifact) {
                 classifier = null
             }
 
